@@ -1,0 +1,7 @@
+*.pyc
+*.npy
+*.pkl
+*.pdf
+*.out
+*.err
+*.*~

@@ -1,0 +1,268 @@
+Rank: 0
+Tag: layers_256_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_100__runonfullsample_True__equallyweighted_True
+Losses: [0.798, 0.801]
+
+Rank: 1
+Tag: layers_256_256_256_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.818, 0.819]
+
+Rank: 2
+Tag: layers_256_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.819, 0.821]
+
+Rank: 3
+Tag: layers_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.819, 0.828]
+
+Rank: 4
+Tag: layers_128_128_128_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.82, 0.82]
+
+Rank: 5
+Tag: layers_256_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.82, 0.834]
+
+Rank: 6
+Tag: layers_256_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.821, 0.825]
+
+Rank: 7
+Tag: layers_128_128_128_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.821, 0.829]
+
+Rank: 8
+Tag: layers_128_128_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.822, 0.822]
+
+Rank: 9
+Tag: layers_128_128_128_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.822, 0.823]
+
+Rank: 10
+Tag: layers_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.822, 0.824]
+
+Rank: 11
+Tag: layers_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.823, 0.823]
+
+Rank: 12
+Tag: layers_128_128_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.823, 0.826]
+
+Rank: 13
+Tag: layers_256_256_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.823, 0.827]
+
+Rank: 14
+Tag: layers_256_256_256_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.825, 0.83]
+
+Rank: 15
+Tag: layers_64_64_64_16__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.826, 0.829]
+
+Rank: 16
+Tag: layers_256_256_256_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.827, 0.831]
+
+Rank: 17
+Tag: layers_128_128_128_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.828, 0.828]
+
+Rank: 18
+Tag: layers_64_64_16__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.828, 0.829]
+
+Rank: 19
+Tag: layers_128_128_128_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.828, 0.83]
+
+Rank: 20
+Tag: layers_128_128_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.829, 0.829]
+
+Rank: 21
+Tag: layers_128_128_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.829, 0.833]
+
+Rank: 22
+Tag: layers_256_256_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.829, 0.838]
+
+Rank: 23
+Tag: layers_128_128_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.831, 0.831]
+
+Rank: 24
+Tag: layers_64_64_64_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.831, 0.831]
+
+Rank: 25
+Tag: layers_64_64_16__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.831, 0.835]
+
+Rank: 26
+Tag: layers_128_128_128_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.831, 0.849]
+
+Rank: 27
+Tag: layers_256_256_256_32__batchsize_32768__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.832, 0.833]
+
+Rank: 28
+Tag: layers_64_64_64_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.833, 0.833]
+
+Rank: 29
+Tag: layers_128_128_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.833, 0.839]
+
+Rank: 30
+Tag: layers_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.833, 0.844]
+
+Rank: 31
+Tag: layers_256_256_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.834, 0.834]
+
+Rank: 32
+Tag: layers_64_64_64_16__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.834, 0.834]
+
+Rank: 33
+Tag: layers_64_64_16__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.835, 0.835]
+
+Rank: 34
+Tag: layers_64_64_64_16__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.835, 0.839]
+
+Rank: 35
+Tag: layers_64_64_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.836, 0.836]
+
+Rank: 36
+Tag: layers_64_64_16__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.836, 0.836]
+
+Rank: 37
+Tag: layers_128_128_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.836, 0.836]
+
+Rank: 38
+Tag: layers_256_256_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.837, 0.84]
+
+Rank: 39
+Tag: layers_64_64_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.838, 0.838]
+
+Rank: 40
+Tag: layers_64_64_16__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.839, 0.844]
+
+Rank: 41
+Tag: layers_128_128_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.84, 0.845]
+
+Rank: 42
+Tag: layers_256_256_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.84, 0.85]
+
+Rank: 43
+Tag: layers_64_64_64_16__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.842, 0.848]
+
+Rank: 44
+Tag: layers_64_64_64_16__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.842, 0.853]
+
+Rank: 45
+Tag: layers_256_256_256_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.843, 0.854]
+
+Rank: 46
+Tag: layers_256_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.844, 0.844]
+
+Rank: 47
+Tag: layers_64_64_16__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.844, 0.844]
+
+Rank: 48
+Tag: layers_64_64_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.844, 0.846]
+
+Rank: 49
+Tag: layers_128_128_128_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_003__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.844, 0.857]
+
+Rank: 50
+Tag: layers_128_128_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.846, 0.856]
+
+Rank: 51
+Tag: layers_128_128_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.851, 0.851]
+
+Rank: 52
+Tag: layers_256_256_256_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.853, 0.854]
+
+Rank: 53
+Tag: layers_128_128_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.855, 0.855]
+
+Rank: 54
+Tag: layers_128_128_128_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.855, 0.856]
+
+Rank: 55
+Tag: layers_128_128_128_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.858, 0.859]
+
+Rank: 56
+Tag: layers_64_64_64_16__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.859, 0.864]
+
+Rank: 57
+Tag: layers_64_64_64_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.86, 0.86]
+
+Rank: 58
+Tag: layers_128_128_128_32__batchsize_2048__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.86, 0.86]
+
+Rank: 59
+Tag: layers_128_128_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_10__runonfullsample_True__equallyweighted_True
+Losses: [0.86, 0.861]
+
+Rank: 60
+Tag: layers_64_64_64_16__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_010__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.86, 0.873]
+
+Rank: 61
+Tag: layers_256_256_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.861, 0.871]
+
+Rank: 62
+Tag: layers_64_64_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.868, 0.868]
+
+Rank: 63
+Tag: layers_64_64_16__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.868, 0.877]
+
+Rank: 64
+Tag: layers_128_128_128_32__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.88, 0.885]
+
+Rank: 65
+Tag: layers_64_64_64_16__batchsize_512__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.882, 0.887]
+
+Rank: 66
+Tag: layers_64_64_64_16__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_030__epochs_20__runonfullsample_True__equallyweighted_True
+Losses: [0.888, 0.894]
+

@@ -1,0 +1,11 @@
+
+
+====================
+Tag: layers_256_256_256_32__batchsize_8192__sampleclasses_5_QCD_Mu_TTbar_DYJets_WJets_ST__dropoutrate_001__epochs_100__runonfullsample_True__equallyweighted_True
+
+Parameters: [layers], batchsize, sampleclasses, dropoutrate*100, epochs, runonfullsample, equallyweighted
+[256, 256, 256, 32], 8192, QCD_Mu -- TTbar -- DYJets -- WJets -- ST, 001, 100, True, True
+
+AUCs: 0.996, 0.886, 0.895, 0.892, 0.832
+Performance: training loss (min, final) -- validation loss (min, final) -- training acc (min, final) -- validation acc (min, final)
+                         (0.787, 0.787) --               (0.798, 0.801) --            (0.608, 0.699) --              (0.599, 0.728)
