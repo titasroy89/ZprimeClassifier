@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --time    0-01:00:00
+#SBATCH --time    0-12:00:00
 #SBATCH --nodes   1
 #SBATCH --constraint GPU
 #SBATCH --partition all
-#SBATCH --array 1-144
+#SBATCH --array 1-3
 #SBATCH --job-name DNN-scan
 #SBATCH --workdir   /beegfs/desy/user/reimersa/ZprimeClassifier/workdir/output
 #SBATCH --output    steer-%N-%j.out

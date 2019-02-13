@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=all
-#SBATCH --time=08:00:00                           # Maximum time requested
+#SBATCH --time=12:00:00                           # Maximum time requested
 #SBATCH --constraint=GPU
 #SBATCH --nodes=1                                 # Number of nodes
 #SBATCH --workdir   /beegfs/desy/user/reimersa/ZprimeClassifier/workdir/output    # directory must already exist!

@@ -8,19 +8,20 @@ from sklearn import preprocessing, svm
 from sklearn.metrics import roc_auc_score, roc_curve, auc, confusion_matrix
 from sklearn.model_selection import train_test_split
 from IPython.display import FileLink, FileLinks
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, BatchNormalization
 from keras.utils import to_categorical, plot_model
 from keras.callbacks import History, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
 
-from ROOT import TCanvas, TFile, TH1F, TH2F, gROOT, kRed, kBlue, kGreen, kMagenta, kCyan, gStyle
+from ROOT import TCanvas, TFile, TH1F, TH2F, gROOT, kRed, kBlue, kGreen, kMagenta, kCyan, kOrange, gStyle
 from ROOT import gErrorIgnoreLevel
 from ROOT import kInfo, kWarning, kError
 
 import math
 import pickle
 import sys
+import os
 
 def dict_to_str(parameters):
     layers_str = [str(parameters['layers'][i]) for i in range(len(parameters['layers']))]
@@ -29,35 +30,38 @@ def dict_to_str(parameters):
         tag = tag + layers_str[i]
         if i < len(layers_str)-1: tag = tag + '_'
     tag = tag + '__batchsize_' + str(parameters['batchsize'])
-    tag = tag + '__sampleclasses_' + str(len(parameters['sampleclasses'])) + '_'
-    for i in range(len(parameters['sampleclasses'])):
-        for j in range(len(parameters['sampleclasses'][i])):
-            tag = tag + parameters['sampleclasses'][i][j]
-            if j < len(parameters['sampleclasses'][i]) - 1:
+    tag = tag + '__classes_' + str(len(parameters['classes'])) + '_'
+    for i in range(len(parameters['classes'])):
+        for j in range(len(parameters['classes'][i])):
+            tag = tag + parameters['classes'][i][j]
+            if j < len(parameters['classes'][i]) - 1:
                 tag = tag + '+'
-        if i < len(parameters['sampleclasses']) - 1:
+        if i < len(parameters['classes']) - 1:
             tag = tag + '_'
 
-    tag = tag + '__dropoutrate_' + '{num:03d}'.format(num=int(parameters['dropoutrate']*100.))
+    tag = tag + '__regmethod_' + parameters['regmethod']
+    tag = tag + '__regrate_' + '{num:06d}'.format(num=int(parameters['regrate']*100000.))
+    tag = tag + '__batchnorm_' + str(parameters['batchnorm'])
     tag = tag + '__epochs_' + str(parameters['epochs'])
-    tag = tag + '__runonfullsample_' + str(parameters['runonfullsample'])
-    tag = tag + '__equallyweighted_' + str(parameters['equallyweighted'])
+    tag = tag + '__learningrate_' + '{num:06d}'.format(num=int(parameters['learningrate']*100000.))
+    tag = tag + '__runonfraction_' + '{num:03d}'.format(num=int(parameters['runonfraction']*100.))
+    tag = tag + '__eqweight_' + str(parameters['eqweight'])
     if len(tag.split('__')) != len(parameters): raise ValueError('in dict_to_str: Number of parameters given in the dictionary does no longer match the prescription how to build the tag out of it.')
     return tag
 
 def get_classes_tag(parameters):
-    tag = 'sampleclasses_' + str(len(parameters['sampleclasses'])) + '_'
-    for i in range(len(parameters['sampleclasses'])):
-        for j in range(len(parameters['sampleclasses'][i])):
-            tag = tag + parameters['sampleclasses'][i][j]
-            if j < len(parameters['sampleclasses'][i]) - 1:
+    tag = 'classes_' + str(len(parameters['classes'])) + '_'
+    for i in range(len(parameters['classes'])):
+        for j in range(len(parameters['classes'][i])):
+            tag = tag + parameters['classes'][i][j]
+            if j < len(parameters['classes'][i]) - 1:
                 tag = tag + '+'
-        if i < len(parameters['sampleclasses']) - 1:
+        if i < len(parameters['classes']) - 1:
             tag = tag + '_'
     return tag
 
 def get_classtitles(parameters):
-    classes = parameters['sampleclasses']
+    classes = parameters['classes']
     classtitles = {}
     for key in classes.keys():
         list = classes[key]
@@ -69,12 +73,16 @@ def get_classtitles(parameters):
         classtitles[key] = title
     return classtitles
 
+def get_fraction(parameters):
+    runonfraction = parameters['runonfraction']
+    string = str('{num:03d}'.format(num=int(parameters['runonfraction']*100.)))
+    return string
 
 def slim_frp_tpr_thr(FalsePositiveRates, TruePositiveRates, Thresholds):
     idxlist = []
     idx=0
     keepgoing = True
-    npoints = 10000
+    npoints = min(10000,len(FalsePositiveRates))
     stepsize = int(float(len(FalsePositiveRates))/float(npoints))
     for idx in range(npoints-1):
         if FalsePositiveRates[idx*stepsize] - FalsePositiveRates[(idx+1)*stepsize] < -5e-6:
@@ -90,7 +98,7 @@ def slim_frp_tpr_thr(FalsePositiveRates, TruePositiveRates, Thresholds):
 
 def get_fpr_tpr_thr_auc(parameters, pred_val, labels_val, weights_val):
 
-    equallyweighted = parameters['equallyweighted']
+    eqweight = parameters['eqweight']
     FalsePositiveRates = {}
     TruePositiveRates = {}
     Thresholds = {}
@@ -104,8 +112,8 @@ def get_fpr_tpr_thr_auc(parameters, pred_val, labels_val, weights_val):
 
 
 def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, pred_train, labels_train, eventweights_val, sample_weights_val, pred_val, labels_val):
-    classes = parameters['sampleclasses']
-    equallyweighted = parameters['equallyweighted']
+    classes = parameters['classes']
+    eqweight = parameters['eqweight']
     pred_trains = {}
     pred_vals = {}
     weights_trains = {}
@@ -125,7 +133,7 @@ def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, 
         lumiweights_trains_thistrueclass = {}
         lumiweights_vals_thistrueclass = {}
         for node in classes.keys():
-            if not equallyweighted:
+            if not eqweight:
                 weights_trains_thistrueclass[node] = eventweights_train[labels_train[:,cl] == 1]
                 weights_vals_thistrueclass[node] = eventweights_val[labels_val[:,cl] == 1]
             else:
@@ -149,7 +157,25 @@ def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, 
         normweights_vals[cl] = normweights_vals_thistrueclass
         lumiweights_trains[cl] = lumiweights_trains_thistrueclass
         lumiweights_vals[cl] = lumiweights_vals_thistrueclass
+
     return pred_trains, weights_trains, normweights_trains, lumiweights_trains, pred_vals, weights_vals, normweights_vals, lumiweights_vals
+
+
+def get_indices_wrong_predictions(labels, preds):
+    mask = []
+    for i in range(labels.shape[0]):
+        label = -1
+        predclass = -1
+        maxpred = -1
+        for j in range(labels.shape[1]):
+            if labels[i,j] == 1: label = j
+            if maxpred < preds[i,j]:
+                maxpred = preds[i,j]
+                predclass = j
+        if label != predclass:
+            mask.append(i)
+
+    return mask
 
 
 def hinton(matrix, max_weight=None, ax=None):
@@ -252,17 +278,6 @@ def log_model_performance(parameters, model_history, aucs):
     with open('output/'+tag+'/ModelPerformance.txt', 'w') as f:
         f.write('\n\n====================\n')
         f.write('Tag: %s\n\n' % (tag))
-        f.write('Parameters: [layers], batchsize, sampleclasses, dropoutrate*100, epochs, runonfullsample, equallyweighted\n')
-        parameterstring = str(parameters['layers']) + ', ' + str(parameters['batchsize']) + ', '
-        for i in range(len(parameters['sampleclasses'])):
-            for j in range(len(parameters['sampleclasses'][i])):
-                parameterstring = parameterstring + parameters['sampleclasses'][i][j]
-                if j < len(parameters['sampleclasses'][i]) - 1:
-                    parameterstring = parameterstring + '+'
-            if i < len(parameters['sampleclasses']) - 1:
-                parameterstring = parameterstring + ' -- '
-        parameterstring = parameterstring + ', {num:03d}, '.format(num=int(parameters['dropoutrate']*100.)) + str(parameters['epochs']) + ', ' + str(parameters['runonfullsample']) + ', ' + str(parameters['equallyweighted'])
-        f.write(parameterstring + '\n\n')
         f.write('AUCs: %s\n' % (aucs_str))
         f.write('Performance: training loss (min, final) -- validation loss (min, final) -- training acc (min, final) -- validation acc (min, final)\n')
         f.write('                         ({0:2.3f}, {1:2.3f}) --               ({2:2.3f}, {3:2.3f}) --            ({4:1.3f}, {5:1.3f}) --              ({6:1.3f}, {7:1.3f})\n'.format(min(loss_train), loss_train[len(loss_train)-1], min(loss_val), loss_val[len(loss_val)-1], min(acc_train), acc_train[len(acc_train)-1], min(acc_val), acc_val[len(acc_val)-1]))
@@ -318,34 +333,97 @@ def plot_accuracy(parameters, model_history):
     fig.savefig('Plots/'+tag+'/Accuracy.pdf')
 
 
-def plot_weights(parameters, model):
+def plot_weight_updates(parameters, model, input_val):
     print 'Starting to plot weights'
     tag = dict_to_str(parameters)
-    for i in range(len(model.layers)):
-        try:
+    epochs = parameters['epochs']
+    tmp = os.listdir('output/'+tag)
+    weightfiles = []
+    weights = []
+    rel_updates = []
+    updates = []
+    activations = []
+    for t in tmp:
+        if 'model_epoch' in t and '.h5' in t:
+            weightfiles.append(t)
+
+    idx=0
+    for weightfile in weightfiles:
+        model = keras.models.load_model('output/'+tag+'/'+weightfile)
+        weights_thismodel = []
+        updates_thismodel = []
+        activations_thismodel = []
+
+        for i in range(len(model.layers)):
+            try:
+                W = model.layers[i].kernel.get_value(borrow=True)
+            except AttributeError:
+                continue
             W = model.layers[i].kernel.get_value(borrow=True)
-        except AttributeError:
-            continue
-        W = model.layers[i].kernel.get_value(borrow=True)
-        W = np.squeeze(W)
-        print W.shape
+            W = np.squeeze(W)
+            W = W.ravel()
+            weights_thismodel.append(W)
+            # intermediate_layer_model = Model(inputs=model.input, outputs=model.layers[i].output)
+            # intermediate_output = np.linalg.norm(np.squeeze(intermediate_layer_model.predict(input_val)).ravel())
+            # activations_thismodel.append(intermediate_output)
+        weights.append(weights_thismodel)
+        # activations.append(activations_thismodel)
 
-        plt.clf()
-        fig = plt.figure(figsize=[20.,20.], dpi=10000)
-        hinton(W)
-        fig.savefig('Plots/'+tag+'/Weights_layer'+str(i)+'.pdf')
+        if idx > 0:
+            updates_thismodel = [weights[idx][i] - weights[idx-1][i] for i in range(len(weights[idx]))]
+            updates_thismodel = [updates_thismodel[i] / weights[idx-1][i] for i in range(len(weights[idx-1]))]
+        rel_updates.append(updates_thismodel)
+        # print 'weights in epoch %i: '%(idx), weights_thismodel
+        # print 'relative weight update to epoch %i: '%(idx), updates_thismodel
+        # print 'activations in epoch %i: '%(idx), activations_thismodel
+        idx += 1
+    # print weights_norm
+    # print rel_updates
 
+    for i in range(len(weights)):
+        allweights = []
+        allupdates = []
+        for j in range(len(weights[i])):
+            # print i, j
+            weights[i][j][weights[i][j]==inf] = 0.
+            weights[i][j][weights[i][j]==-inf] = 0.
+            # print weights[i][j][weights[i][j]==inf]
+            # print weights[i][j][weights[i][j]==-inf]
+            allweights += weights[i][j].tolist()
+            if i > 0:
+                rel_updates[i][j][rel_updates[i][j]==inf] = 0.
+                rel_updates[i][j][rel_updates[i][j]==-inf] = 0.
+                # print rel_updates[i][j][rel_updates[i][j]==inf]
+                # print rel_updates[i][j][rel_updates[i][j]==-inf]
+                # print rel_updates[i][j][rel_updates[i][j] > 10]
+                allupdates += rel_updates[i][j].tolist()
+
+        nbins = 50
+        current_epoch = epochs/5 * i
         plt.clf()
-        fig = plt.figure(dpi=500)
-        im = plt.imshow(W, cmap='viridis', interpolation='none')
-        fig.colorbar(im)
-        fig.savefig('Plots/'+tag+'/Weights_layer'+str(i)+'_color.pdf')
+        fig = plt.figure()
+        plt.hist(allweights, bins=nbins, histtype='step', label='Weights after '+str(current_epoch)+' training epochs')
+        plt.yscale('log')
+        plt.xlabel('Weight')
+        plt.ylabel('Number of nodes')
+        fig.savefig('Plots/'+tag+'/Weights_epoch'+str(current_epoch)+'.pdf')
+        plt.close()
+
+        if i>0:
+            plt.clf()
+            fig = plt.figure()
+            plt.hist(allupdates, bins=nbins, histtype='step', label='Relative updates after '+str(current_epoch)+' training epochs')
+            plt.yscale('log')
+            plt.xlabel('Relative weight update')
+            plt.ylabel('Number of nodes')
+            fig.savefig('Plots/'+tag+'/Updates_epoch'+str(current_epoch)+'.pdf')
+            plt.close()
 
 
 def plot_confusion_matrices(parameters, pred_train, labels_train, sample_weights_train, eventweights_train, pred_val, labels_val, sample_weights_val, eventweights_val):
     print 'Starting to plot confusion matrix'
     tag = dict_to_str(parameters)
-    equallyweighted = parameters['equallyweighted']
+    eqweight = parameters['eqweight']
     classtitles = get_classtitles(parameters)
 
     labels_1d = np.empty(labels_val.shape[0])
@@ -362,7 +440,7 @@ def plot_confusion_matrices(parameters, pred_train, labels_train, sample_weights
         if label == -1: raise ValueError('For this event, the labels of all classes are 0, so the event doesn\'t have a class?')
         labels_1d[i] = label
         pred_1d[i] = predclass
-    if equallyweighted:
+    if eqweight:
         conf_matrix_train = conf_matrix(labels_train, pred_train, sample_weights_train)
         conf_matrix_val = conf_matrix(labels_val, pred_val, sample_weights_val)
     else:
@@ -398,8 +476,8 @@ def plot_confusion_matrices(parameters, pred_train, labels_train, sample_weights
 def plot_outputs_2d(parameters, pred_vals, lumiweights_vals, colorstr, rootcolors):
     print 'Starting to plot 2d plots of output variables'
     tag = dict_to_str(parameters)
-    equallyweighted = parameters['equallyweighted']
-    classes = parameters['sampleclasses']
+    eqweight = parameters['eqweight']
+    classes = parameters['classes']
     classtitles = get_classtitles(parameters)
     gErrorIgnoreLevel = kWarning
 
@@ -427,13 +505,14 @@ def plot_outputs_2d(parameters, pred_vals, lumiweights_vals, colorstr, rootcolor
                 del c1
 
 
-def plot_outputs_1d(parameters, colorstr, pred_trains, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, labels_val, weights_vals, lumiweights_vals, normweights_vals):
+def plot_outputs_1d_nodes(parameters, colorstr, pred_trains, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, labels_val, weights_vals, lumiweights_vals, normweights_vals):
 
     print 'Starting to plot the classifier output distribution'
     tag = dict_to_str(parameters)
     classtitles = get_classtitles(parameters)
 
     for cl in range(labels_train.shape[1]):
+        # 'cl' is the output node number
         nbins = 100
         binwidth = 1./float(nbins)
         y_trains = {}
@@ -445,8 +524,83 @@ def plot_outputs_1d(parameters, colorstr, pred_trains, labels_train, weights_tra
         bin_centers = {}
         yerrs = {}
         yerrs_norm = {}
+        #
+        # print 'class: ', cl
+        # print 'integral lumiweighted: ', lumiweights_vals[cl][0].sum()
+        # print 'integral lumi+classwe: ', weights_vals[cl][0].sum()
+        # print 'integral normed lumi+classwe: ', (weights_vals[cl][0]*normweights_vals[cl][0]).sum()
+
 
         for i in range(labels_train.shape[1]):
+            # 'i' is the true class (always the first index)
+            y_trains[i], dummy = np.histogram(pred_trains[i][cl], bins=nbins, weights=lumiweights_trains[i][cl])
+            y_trains_norm[i], bin_edges_trains[i] = np.histogram(pred_trains[i][cl], bins=nbins, weights=weights_trains[i][cl])
+            y_vals[i], dummy = np.histogram(pred_vals[i][cl], bins=nbins, weights=lumiweights_vals[i][cl])
+            y_vals_norm[i], bin_edges_vals[i] = np.histogram(pred_vals[i][cl], bins=nbins, weights=weights_vals[i][cl])
+            bin_centers[i] = 0.5*(bin_edges_trains[i][1:] + bin_edges_trains[i][:-1])
+            yerrs_norm[i] = y_vals_norm[i]**0.5
+            yerrs[i] = y_vals[i]**0.5
+            y_vals_norm[i] = y_vals_norm[i] * normweights_vals[i][cl][0]
+            yerrs_norm[i] = yerrs_norm[i] * normweights_vals[i][cl][0]
+
+        plt.clf()
+        fig = plt.figure()
+        classtitle_to_use = ''
+        for i in range(labels_train.shape[1]):
+            plt.hist(pred_trains[i][cl], weights=weights_trains[i][cl]*normweights_trains[i][cl], bins=nbins, histtype='step', label='Training sample, ' + classtitles[i], color=colorstr[i])
+            plt.errorbar(bin_centers[i], y_vals_norm[i], yerr=yerrs_norm[i], fmt = '.', drawstyle = 'steps-mid', linestyle='-', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            if i == cl:
+                classtitle_to_use = classtitles[i]
+
+        plt.legend(loc='best', prop={'size': 8})
+        plt.yscale('log')
+        plt.xlabel('Classifier output for node '+classtitle_to_use)
+        plt.ylabel('Normalized number of events / bin')
+        fig.savefig('Plots/'+tag+'/Distribution_node'+str(cl)+'_norm.pdf')
+
+        plt.clf()
+        fig = plt.figure()
+        classtitle_to_use = ''
+        for i in range(labels_train.shape[1]):
+            plt.errorbar(bin_centers[i], y_vals[i], yerr=yerrs[i], fmt = '.', drawstyle = 'steps-mid', linestyle='-', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            if i == cl:
+                classtitle_to_use = classtitles[i]
+
+        plt.legend(loc='best', prop={'size': 8})
+        plt.yscale('log')
+        plt.xlabel('Classifier output for node '+classtitle_to_use)
+        plt.ylabel('Number of events / bin (weighted by luminosity)')
+        fig.savefig('Plots/'+tag+'/Distribution_node'+str(cl)+'.pdf')
+        plt.close()
+
+def plot_outputs_1d_classes(parameters, colorstr, pred_trains, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, labels_val, weights_vals, lumiweights_vals, normweights_vals):
+
+    print 'Starting to plot the classifier output distribution'
+    tag = dict_to_str(parameters)
+    classtitles = get_classtitles(parameters)
+
+    for cl in range(labels_train.shape[1]):
+        # 'cl' is the output node number
+        nbins = 100
+        binwidth = 1./float(nbins)
+        y_trains = {}
+        y_vals = {}
+        y_trains_norm = {}
+        y_vals_norm = {}
+        bin_edges_trains = {}
+        bin_edges_vals = {}
+        bin_centers = {}
+        yerrs = {}
+        yerrs_norm = {}
+        #
+        # print 'class: ', cl
+        # print 'integral lumiweighted: ', lumiweights_vals[cl][0].sum()
+        # print 'integral lumi+classwe: ', weights_vals[cl][0].sum()
+        # print 'integral normed lumi+classwe: ', (weights_vals[cl][0]*normweights_vals[cl][0]).sum()
+
+
+        for i in range(labels_train.shape[1]):
+            # 'i' is the true class (always the first index)
             y_trains[i], dummy = np.histogram(pred_trains[cl][i], bins=nbins, weights=lumiweights_trains[cl][i])
             y_trains_norm[i], bin_edges_trains[i] = np.histogram(pred_trains[cl][i], bins=nbins, weights=weights_trains[cl][i])
             y_vals[i], dummy = np.histogram(pred_vals[cl][i], bins=nbins, weights=lumiweights_vals[cl][i])
@@ -462,27 +616,27 @@ def plot_outputs_1d(parameters, colorstr, pred_trains, labels_train, weights_tra
         classtitle_to_use = ''
         for i in range(labels_train.shape[1]):
             plt.hist(pred_trains[cl][i], weights=weights_trains[cl][i]*normweights_trains[cl][i], bins=nbins, histtype='step', label='Training sample, ' + classtitles[i], color=colorstr[i])
-            plt.errorbar(bin_centers[i], y_vals_norm[i], yerr=yerrs_norm[i], fmt = '.', drawstyle = 'steps-mid-', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            plt.errorbar(bin_centers[i], y_vals_norm[i], yerr=yerrs_norm[i], fmt = '.', drawstyle = 'steps-mid', linestyle='-', label='Validation sample, ' + classtitles[i], color=colorstr[i])
             if i == cl:
                 classtitle_to_use = classtitles[i]
 
         plt.legend(loc='best', prop={'size': 8})
         plt.yscale('log')
-        plt.xlabel('Classifier output for '+classtitle_to_use)
+        plt.xlabel('Classifier output for true class '+classtitle_to_use)
         plt.ylabel('Normalized number of events / bin')
-        fig.savefig('Plots/'+tag+'/Distribution_class'+str(cl)+'_full_norm.pdf')
+        fig.savefig('Plots/'+tag+'/Distribution_class'+str(cl)+'_norm.pdf')
 
         plt.clf()
         fig = plt.figure()
         classtitle_to_use = ''
         for i in range(labels_train.shape[1]):
-            plt.errorbar(bin_centers[i], y_vals[i], yerr=yerrs[i], fmt = '.', drawstyle = 'steps-mid-', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            plt.errorbar(bin_centers[i], y_vals[i], yerr=yerrs[i], fmt = '.', drawstyle = 'steps-mid', linestyle='-', label='Validation sample, ' + classtitles[i], color=colorstr[i])
             if i == cl:
                 classtitle_to_use = classtitles[i]
 
         plt.legend(loc='best', prop={'size': 8})
         plt.yscale('log')
-        plt.xlabel('Classifier output for '+classtitle_to_use)
+        plt.xlabel('Classifier output for true class '+classtitle_to_use)
         plt.ylabel('Number of events / bin (weighted by luminosity)')
-        fig.savefig('Plots/'+tag+'/Distribution_class'+str(cl)+'_full.pdf')
+        fig.savefig('Plots/'+tag+'/Distribution_class'+str(cl)+'.pdf')
         plt.close()

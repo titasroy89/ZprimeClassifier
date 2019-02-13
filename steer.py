@@ -23,26 +23,30 @@ from GetInputs import *
 from RankNetworks import *
 from functions import *
 
-
-# parameters = {'layers':[128, 128, 16],
-#               'batchsize': 8192,
-#               'sampleclasses':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
-#               'dropoutrate':0.01,
-#               'epochs':10,
-#               'runonfullsample':True,
-#               'equallyweighted':True}
-parameters = {'layers':[256, 256, 256, 32],
+# 'layers':[256, 512, 512, 512, 128, 16]
+parameters = {'layers':[256, 256],
               'batchsize': 8192,
-              'sampleclasses':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
-              'dropoutrate':0.01,
-              'epochs':20,
-              'runonfullsample':True,
-              'equallyweighted':True}
+              'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
+              'regmethod': 'dropout',
+              'regrate':0.01000,
+              'batchnorm': True,
+              'epochs':19,
+              'learningrate': 0.00100,
+              'runonfraction': 0.20,
+              'eqweight':False}
+# parameters = {'layers':[512, 512, 128, 32],
+#               'batchsize': 8192,
+#               'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
+#               'dropoutrate':0.01,
+#               'epochs':20,
+#               'runonfullsample':True,
+#               'eqweight':True}
+
+
 
 
 # GetInputs(parameters)
 # PlotInputs(parameters)
-
 
 # TrainNetwork(parameters)
 PlotPerformance(parameters, True)
