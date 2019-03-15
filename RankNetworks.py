@@ -18,44 +18,57 @@ import pickle
 import os
 from functions import *
 
-def RankNetworks(parameters):
+def RankNetworks(outputfolder):
 
     # Get all the model folders
-    modellist = os.listdir('output')
+    modellist = os.listdir(outputfolder)
 
     # Loop over them, open the correct file
     modelresults_lumiweighted = {}
     modelresults_equallyweighted = {}
     for tag in modellist:
-        if not os.path.isdir('output/' + tag): continue
-        infile = open('output/'+tag+'/ModelPerformance.txt','r')
+        if not os.path.isdir(outputfolder+tag): continue
+        try:
+            infile = open(outputfolder+tag+'/ModelPerformance.txt','r')
+        except:
+            print 'couldn\'t open file %s, skipping this one.' % (outputfolder+tag+'/ModelPerformance.txt')
+            continue
+        # print 'found file "%s"' % (outputfolder+tag+'/ModelPerformance.txt')
         lines = infile.readlines()
         for line in lines:
-            if 'Tag:' == line[0:4]:
+            """if 'Tag:' == line[0:4]:
                 tag = line.split(' ')[1]
-            elif '    ' == line[0:4]:
+            el"""
+            if '    ' == line[0:4]:
                 line = line.replace(' ','')
                 vallosses = line.split('--')[1]
                 vallossmin = vallosses.split(',')[0].replace('(','')
                 vallossfin = vallosses.split(',')[1].replace(')','')
                 # print line
-                # print vallossmin, vallossfin
-        if 'equallyweighted_False' in tag:
+        if ('eqweight_False' in tag) or ('equallyweighted_False' in tag):
+            print tag
+            # print vallossmin, vallossfin
             modelresults_lumiweighted[tag] = [float(vallossmin), float(vallossfin)]
-        elif 'equallyweighted_True' in tag:
+            print modelresults_lumiweighted[tag]
+            print len(modelresults_lumiweighted)
+        elif ('eqweight_True') in tag or ('equallyweighted_True' in tag):
             modelresults_equallyweighted[tag] = [float(vallossmin), float(vallossfin)]
         else:
-            raise ValueError('the part "equallyweighted_(True|False)" is not in the tag.')
+            raise ValueError('the part "eqweight_(True|False)" is not in the tag.')
         infile.close()
 
-    outfile = open('output/ModelRanking_lumiweighted.txt', 'w')
+    for tag in modelresults_lumiweighted.keys():
+        print modelresults_lumiweighted[tag]
+    outfile = open(outputfolder + 'ModelRanking_lumiweighted.txt', 'w')
     idx = 0
+    print len(modelresults_lumiweighted)
     for tag in sorted(modelresults_lumiweighted, key=modelresults_lumiweighted.get, reverse=False):
-        text = 'Rank: ' + str(idx) + '\nTag: ' + tag + 'Losses: ' + str(modelresults_lumiweighted[tag]) + '\n\n'
+        text = 'Rank: ' + str(idx) + '\nTag: ' + tag + '\nLosses: ' + str(modelresults_lumiweighted[tag]) + '\n\n'
+        print text
         outfile.write(text)
         idx=idx+1
     outfile.close()
-    outfile = open('output/ModelRanking_equallyweighted.txt', 'w')
+    outfile = open(outputfolder + 'ModelRanking_equallyweighted.txt', 'w')
     idx = 0
     for tag in sorted(modelresults_equallyweighted, key=modelresults_equallyweighted.get, reverse=False):
         text = 'Rank: ' + str(idx) + '\nTag: ' + tag + 'Losses: ' + str(modelresults_equallyweighted[tag]) + '\n\n'

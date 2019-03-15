@@ -21,8 +21,9 @@ import pickle
 import sys
 import os
 from functions import *
+from constants import *
 
-def PlotPerformance(parameters, plot_distributions=False):
+def PlotPerformance(parameters, inputfolder, outputfolder, filepostfix, plotfolder, use_best_model=False, usesignals=[0]):
     print 'Now plotting the performance'
     gErrorIgnoreLevel = kWarning
 
@@ -34,95 +35,55 @@ def PlotPerformance(parameters, plot_distributions=False):
     # classes = parameters['classes']
     tag = dict_to_str(parameters)
     classtag = get_classes_tag(parameters)
-    colorstr = ['C0', 'C1', 'C2', 'C3', 'C4']
-    rootcolors = {'C3': kRed, 'C0': kBlue+1, 'C2': kGreen+1, 'C4': kMagenta, 'C1': kOrange+1}
 
     # Get model and its history
-    model = keras.models.load_model('output/'+tag+'/model.h5')
-    with open('output/'+tag+'/model_history.pkl', 'r') as f:
+    model = keras.models.load_model(outputfolder+'/model.h5')
+    with open(outputfolder+'/model_history.pkl', 'r') as f:
         model_history = pickle.load(f)
 
     # Get inputs
-    input_train = np.load('input/'+classtag+'/input_'+fraction+'_train.npy')
-    input_test = np.load('input/'+classtag+'/input_'+fraction+'_test.npy')
-    input_val = np.load('input/'+classtag+'/input_'+fraction+'_val.npy')
-    labels_train = np.load('input/'+classtag+'/labels_'+fraction+'_train.npy')
-    labels_test = np.load('input/'+classtag+'/labels_'+fraction+'_test.npy')
-    labels_val = np.load('input/'+classtag+'/labels_'+fraction+'_val.npy')
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_train.pkl', 'r') as f:
-        sample_weights_train = pickle.load(f)
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_test.pkl', 'r') as f:
-        sample_weights_test = pickle.load(f)
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_val.pkl', 'r') as f:
-        sample_weights_val = pickle.load(f)
-    with open('input/'+classtag+'/eventweights_'+fraction+'_train.pkl', 'r') as f:
-        eventweights_train = pickle.load(f)
-    with open('input/'+classtag+'/eventweights_'+fraction+'_test.pkl', 'r') as f:
-        eventweights_test = pickle.load(f)
-    with open('input/'+classtag+'/eventweights_'+fraction+'_val.pkl', 'r') as f:
-        eventweights_val = pickle.load(f)
+    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, eventweight_signals, normweight_signals = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
 
-    # Load model prediction
-    pred_train = np.load('output/'+tag+'/prediction_train.npy')
-    pred_test = np.load('output/'+tag+'/prediction_test.npy')
-    pred_val = np.load('output/'+tag+'/prediction_val.npy')
-
-
-    FalsePositiveRates, TruePositiveRates, Thresholds, aucs = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_val, labels_val=labels_val, weights_val=sample_weights_val)
-    FalsePositiveRates_lumi, TruePositiveRates_lumi, Thresholds_lumi, aucs_lumi = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_val, labels_val=labels_val, weights_val=eventweights_val)
-    FalsePositiveRates_train, TruePositiveRates_train, Thresholds_train, aucs_train = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_train, labels_val=labels_train, weights_val=sample_weights_train)
-    FalsePositiveRates_train_lumi, TruePositiveRates_train_lumi, Thresholds_train_lumi, aucs_train_lumi = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_train, labels_val=labels_train, weights_val=eventweights_train)
-
-    if not os.path.isdir('Plots/' + tag): os.makedirs('Plots/' + tag)
+    pred_train, pred_test, pred_val, pred_signals = load_predictions(outputfolder=outputfolder, filepostfix=filepostfix)
 
 
 
+    if not os.path.isdir(plotfolder): os.makedirs(plotfolder)
 
 
-    log_model_performance(parameters=parameters, model_history=model_history, aucs=aucs)
-    plot_roc(parameters=parameters, FalsePositiveRates=FalsePositiveRates, TruePositiveRates=TruePositiveRates, aucs=aucs, colorstr=colorstr, outnametag='val_eqweight')
-    plot_roc(parameters=parameters, FalsePositiveRates=FalsePositiveRates_lumi, TruePositiveRates=TruePositiveRates_lumi, aucs=aucs_lumi, colorstr=colorstr, outnametag='val_lumiweighted')
-    plot_roc(parameters=parameters, FalsePositiveRates=FalsePositiveRates_train, TruePositiveRates=TruePositiveRates_train, aucs=aucs_train, colorstr=colorstr, outnametag='train_eqweight')
-    plot_roc(parameters=parameters, FalsePositiveRates=FalsePositiveRates_train_lumi, TruePositiveRates=TruePositiveRates_train_lumi, aucs=aucs_train_lumi, colorstr=colorstr, outnametag='train_lumiweighted')
-    plot_loss(parameters=parameters, model_history=model_history)
-    plot_accuracy(parameters=parameters, model_history=model_history)
-    plot_model(model, show_shapes=True, to_file='Plots/'+tag+'/Model.pdf')
-    # plot_weight_updates(parameters=parameters, model=model, input_val=input_val)
-    # plot_confusion_matrices(parameters=parameters, pred_train=pred_train, labels_train=labels_train, sample_weights_train=sample_weights_train, eventweights_train=eventweights_train, pred_val=pred_val, labels_val=labels_val, sample_weights_val=sample_weights_val, eventweights_val=eventweights_val)
+    log_model_performance(parameters=parameters, model_history=model_history, outputfolder=outputfolder)
+    plot_loss(parameters=parameters, plotfolder=plotfolder, model_history=model_history)
+    plot_accuracy(parameters=parameters, plotfolder=plotfolder, model_history=model_history)
+    plot_rocs(parameters=parameters, plotfolder=plotfolder, pred_val=pred_val, labels_val=labels_val, sample_weights_val=sample_weights_val, eventweights_val=eventweights_val, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    plot_model(model, show_shapes=True, to_file=plotfolder+'/Model.pdf')
+    plot_confusion_matrices(parameters=parameters, plotfolder=plotfolder, pred_train=pred_train, labels_train=labels_train, sample_weights_train=sample_weights_train, eventweights_train=eventweights_train, pred_val=pred_val, labels_val=labels_val, sample_weights_val=sample_weights_val, eventweights_val=eventweights_val, use_best_model=use_best_model)
+
+    # make plots with signals
+
+
     pred_trains, weights_trains, normweights_trains, lumiweights_trains, pred_vals, weights_vals, normweights_vals, lumiweights_vals = get_data_dictionaries(parameters=parameters, eventweights_train=eventweights_train, sample_weights_train=sample_weights_train, pred_train=pred_train, labels_train=labels_train, eventweights_val=eventweights_val, sample_weights_val=sample_weights_val, pred_val=pred_val, labels_val=labels_val)
-    if not plot_distributions: return
-    # plot_outputs_2d(parameters=parameters, pred_vals=pred_vals, lumiweights_vals=lumiweights_vals, colorstr=colorstr, rootcolors=rootcolors)
-    plot_outputs_1d_nodes(parameters=parameters, colorstr=colorstr, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals)
-    plot_outputs_1d_classes(parameters=parameters, colorstr=colorstr, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals)
+    plot_outputs_1d_nodes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, pred_signals=pred_signals, eventweight_signals=eventweight_signals, normweight_signals=normweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    plot_outputs_1d_classes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, use_best_model=use_best_model)
+    # plot_outputs_2d(parameters=parameters, plotfolder=plotfolder, pred_vals=pred_vals, lumiweights_vals=lumiweights_vals, use_best_model=use_best_model)
+    best_cuts = cut_iteratively(parameters=parameters, outputfolder=outputfolder, pred_val=pred_val, labels_val=labels_val, eventweights_val=eventweights_val, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals)
+    plot_cuts(parameters=parameters, outputfolder=outputfolder, plotfolder=plotfolder, best_cuts=best_cuts, pred_vals=pred_vals, labels_val=labels_val, lumiweights_vals=lumiweights_vals, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    apply_cuts(parameters=parameters, outputfolder=outputfolder, best_cuts=best_cuts, input_train=input_train, input_val=input_val, input_test=input_test, labels_train=labels_train, labels_val=labels_val, labels_test=labels_test, sample_weights_train=sample_weights_train, sample_weights_val=sample_weights_val, sample_weights_test=sample_weights_test, eventweights_train=eventweights_train, eventweights_val=eventweights_val, eventweights_test=eventweights_test, pred_train=pred_train, pred_val=pred_val, pred_test=pred_test, signals=signals, eventweight_signals=eventweight_signals, pred_signals=pred_signals, signal_identifiers=signal_identifiers, use_best_model=use_best_model)
 
 
 
-def PlotInputs(parameters):
+def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
 
     # Get parameters
-    # runonfullsample = parameters['runonfullsample']
     runonfraction = parameters['runonfraction']
     fraction = get_fraction(parameters)
     classtag = get_classes_tag(parameters)
-    colorstr = ['r', 'b', 'g', 'm', 'c']
-    rootcolors = {'r': kRed, 'b': kBlue+1, 'g': kGreen+1, 'm': kMagenta, 'c': kCyan}
+    tag = dict_to_str(parameters)
 
-    if not os.path.isdir('Plots/InputDistributions/' + classtag):
-        os.makedirs('Plots/InputDistributions/' + classtag)
+    if not os.path.isdir(plotfolder):
+        os.makedirs(plotfolder)
 
     # Get inputs
-    input_train = np.load('input/'+classtag+'/input_'+fraction+'_train.npy')
-    input_test = np.load('input/'+classtag+'/input_'+fraction+'_test.npy')
-    input_val = np.load('input/'+classtag+'/input_'+fraction+'_val.npy')
-    labels_test = np.load('input/'+classtag+'/labels_'+fraction+'_test.npy')
-    labels_train = np.load('input/'+classtag+'/labels_'+fraction+'_train.npy')
-    labels_val = np.load('input/'+classtag+'/labels_'+fraction+'_val.npy')
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_train.pkl', 'r') as f:
-        sample_weights_train = pickle.load(f)
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_test.pkl', 'r') as f:
-        sample_weights_test = pickle.load(f)
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_val.pkl', 'r') as f:
-        sample_weights_val = pickle.load(f)
+    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, eventweight_signals, normweight_signals = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
     with open('input/'+classtag+'/variable_names.pkl', 'r') as f:
         variable_names = pickle.load(f)
 
@@ -174,7 +135,7 @@ def PlotInputs(parameters):
         plt.yscale('log')
         plt.xlabel(varname)
         plt.ylabel('Number of events / bin')
-        fig.savefig('Plots/InputDistributions/' + classtag+  '/' + varname + '_'+fraction+'.pdf')
+        fig.savefig(plotfolder + '/' + varname + '_'+fraction+'.pdf')
         # if runonfullsample: fig.savefig('Plots/InputDistributions/' + classtag+  '/' + varname + '_full.pdf')
         # else: fig.savefig('Plots/InputDistributions/' + classtag+  '/' + varname + '_part.pdf')
         idx += 1

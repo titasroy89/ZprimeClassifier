@@ -21,34 +21,107 @@ from Training import *
 from Plotting import *
 from GetInputs import *
 from RankNetworks import *
+from PredictExternal import *
 from functions import *
+from TrainModelOnPredictions import *
+from TrainSecondNetwork import *
+from TrainThirdNetwork import *
+from ExportModel import *
 
-# 'layers':[256, 512, 512, 512, 128, 16]
-parameters = {'layers':[256, 256],
+
+
+
+
+parameters = {'layers':[512, 512],
               'batchsize': 8192,
               'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
+              # 'classes':{0: ['QCD_Mu'], 1: ['TTbar', 'DYJets', 'WJets', 'ST']},
+              # 'classes':{0: ['TTbar'], 1:['DYJets'], 2:['WJets'], 3:['ST']},
+              # 'classes':{0: ['TTbar'], 1:['ST']},
+              # 'classes':{0: ['TTbar'], 1: ['DYJets', 'WJets', 'ST']},
               'regmethod': 'dropout',
-              'regrate':0.01000,
+              'regrate':0.50000,
               'batchnorm': True,
-              'epochs':19,
+              'epochs':500,
               'learningrate': 0.00100,
-              'runonfraction': 0.20,
+              'runonfraction': 0.99,
               'eqweight':False}
-# parameters = {'layers':[512, 512, 128, 32],
-#               'batchsize': 8192,
-#               'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
-#               'dropoutrate':0.01,
-#               'epochs':20,
-#               'runonfullsample':True,
-#               'eqweight':True}
+
+parameters_onpredictions ={'layers':[20, 20],
+                            'batchsize': 8192,
+                            'classes':parameters['classes'],
+                            'regmethod': 'dropout',
+                            'regrate':0.01000,
+                            'batchnorm': True,
+                            'epochs':499,
+                            'learningrate': 0.00100,
+                            'runonfraction': parameters['runonfraction'],
+                            'eqweight':False}
+
+parameters2 ={'layers':[512, 512],
+              'batchsize': 8192,
+              'classes':parameters['classes'],
+              'regmethod': 'dropout',
+              'regrate':0.20000,
+              'batchnorm': True,
+              'epochs':500,
+              'learningrate': 0.00100,
+              'runonfraction': parameters['runonfraction'],
+              'eqweight':False}
+
+parameters3 ={'layers':[512, 512],
+              'batchsize': 8192,
+              'classes':parameters['classes'],
+              'regmethod': 'dropout',
+              'regrate':0.20000,
+              'batchnorm': True,
+              'epochs':500,
+              'learningrate': 0.00100,
+              'runonfraction': parameters['runonfraction'],
+              'eqweight':False}
+
+tag = dict_to_str(parameters)
+classtag = get_classes_tag(parameters)
+tag_onpredictions = dict_to_str(parameters_onpredictions)
+classtag_onpredictions = get_classes_tag(parameters_onpredictions)
+tag2 = dict_to_str(parameters2)
+classtag2 = get_classes_tag(parameters2)
+tag3= dict_to_str(parameters3)
+classtag3 = get_classes_tag(parameters3)
 
 
+# # Get all the inputs
+# # ==================
+GetInputs(parameters)
+PlotInputs(parameters, inputfolder='input/'+classtag, filepostfix='', plotfolder='Plots/InputDistributions/' + classtag)
 
+# # First network
+# # =============
+TrainNetwork(parameters)
+PredictExternal(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='')
+# PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', use_best_model=False, usesignals=[2,4])
+PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', plotfolder='Plots/'+tag, use_best_model=True, usesignals=[2,4])
+# PlotInputs(parameters, inputfolder='output/'+tag+'/cut', filepostfix='_pass_best', plotfolder='Plots/'+tag+'/InputDistributions/pass')
+# PlotInputs(parameters, inputfolder='output/'+tag+'/cut', filepostfix='_fail_best', plotfolder='Plots/'+tag+'/InputDistributions/fail')
+ExportModel(parameters, use_best_model=True)
+# RankNetworks(outputfolder='output/')
 
-# GetInputs(parameters)
-# PlotInputs(parameters)
+# # Network trained on outputs
+# # ==========================
+# TrainModelOnPredictions(parameters, parameters_onpredictions, use_best_model=True)
+# PredictExternalOnPredictions(parameters, inputfolder='input/'+classtag, inputfolder_predictions='output/'+tag, filepostfix='_best', outputfolder='output/'+tag+'/ModelsOnPredictions/output/'+tag_onpredictions)
+# PlotPerformance(parameters_onpredictions, inputfolder='input/'+classtag, outputfolder='output/'+tag+'/ModelsOnPredictions/output/'+tag_onpredictions, filepostfix='', plotfolder='output/'+tag+'/ModelsOnPredictions/Plots/'+tag_onpredictions, use_best_model=True, usesignals=[2,4])
 
-# TrainNetwork(parameters)
-PlotPerformance(parameters, True)
+# # Second network
+# # ==============
+# TrainSecondNetwork(parameters, parameters2, use_best_model=True)
+# PredictExternal(parameters, inputfolder='output/'+tag+'/cut', filepostfix='_fail_best', outputfolder='output/'+tag+'/SecondModels/output/'+tag2)
+# PlotPerformance(parameters2, inputfolder='output/'+tag+'/cut', outputfolder='output/'+tag+'/SecondModels/output/'+tag2, filepostfix='_fail_best', plotfolder='output/'+tag+'/SecondModels/Plots/'+tag2, use_best_model=True, usesignals=[2,4])
+# RankNetworks(outputfolder='output/'+tag+'/SecondModels/output/')
 
-# RankNetworks(parameters)
+# # Third network
+# # ==============
+# TrainThirdNetwork(parameters, parameters2, parameters3, use_best_model=True)
+# PredictExternal(parameters, inputfolder='output/'+tag+'/SecondModels/output/'+tag2+'/cut', filepostfix='_fail_best', outputfolder='output/'+tag+'/SecondModels/output/'+tag2+'/ThirdModels/output/'+tag3)
+# PlotPerformance(parameters3, inputfolder='output/'+tag+'/SecondModels/output/'+tag2+'/cut', outputfolder='output/'+tag+'/SecondModels/output/'+tag2+'/ThirdModels/output/'+tag3, filepostfix='_fail_best', plotfolder='output/'+tag+'/SecondModels/output/'+tag2+'/ThirdModels/Plots/'+tag3, use_best_model=True, usesignals=[2,4])
+# RankNetworks(outputfolder='output/'+tag+'/SecondModels/output/'+tag2+'/ThirdModels/output/')

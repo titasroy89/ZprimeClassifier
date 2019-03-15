@@ -28,19 +28,16 @@ def GetInputs(parameters):
     classtag = get_classes_tag(parameters)
 
     if os.path.isdir('input/' + classtag):
-        # if (runonfullsample and os.path.isfile('input/' + classtag + '/input_full_val.npy')) or (not runonfullsample and os.path.isfile('input/' + classtag + '/input_part_val.npy')):
         if os.path.isfile('input/' + classtag + '/input_' + fraction + '_val.npy'):
-            return
+            # print 'These inputfiles already exist, go on to next function.'
+            # return
+            pass
         else:
             pass
     else:
         os.makedirs('input/' + classtag)
 
-    # Get samples as input
-    # classes    = {0: ['TTbar', 'WJets', 'ST', 'DYJets'], 1: ['QCD_Mu']}
     maxfiles_per_sample = {'TTbar': -1, 'WJets': -1, 'ST': -1, 'DYJets': -1, 'RSGluon': -1, 'QCD_Mu': -1}
-    # if not runonfullsample:
-    #     maxfiles_per_sample = {'TTbar': 10, 'WJets': 2, 'ST': 2, 'DYJets': 2, 'RSGluon': 2, 'QCD_Mu': 10}
 
     # Find initial file for each class
     inputfiles = os.listdir('input/MLInput')
@@ -88,6 +85,43 @@ def GetInputs(parameters):
         thislabel = thislabel.astype(np.int8)
         all_labels[cl] = thislabel
 
+    # now read in signal
+    signal_masses = [1000, 2000, 3000, 4000, 5000, 6000]
+    signal_identifiers = ['RSGluon_All']
+    for mass in signal_masses:
+        signal_identifiers.append('RSGluon_M' + str(mass))
+    all_signals = {}
+    all_signal_eventweights = {}
+    lists_of_inputfiles_sig = []
+    for i in range(len(signal_identifiers)):
+        tmp = []
+        sample = signal_identifiers[i]
+        idx = 0
+        for j in range(len(inputfiles)):
+            if signal_identifiers[i]+'_' in inputfiles[j] and not 'Weights_' in inputfiles[j] and '.npy' in inputfiles[j]:
+                tmp.append(inputfiles[j])
+                idx += 1
+        lists_of_inputfiles_sig.append(tmp)
+    print lists_of_inputfiles_sig
+
+    # Read files for this class
+    for i in range(len(lists_of_inputfiles_sig)):
+        print '\nNow starting with sample %s' % (signal_identifiers[i])
+        first = True
+        for j in range(len(lists_of_inputfiles_sig[i])):
+            print 'At file no. %i out of %i.' % (j+1, len(lists_of_inputfiles_sig[i]))
+            if first:
+                thisinput = np.load('input/MLInput/' + lists_of_inputfiles_sig[i][j])
+                thiseventweight = np.load('input/MLInput/Weights_' + lists_of_inputfiles_sig[i][j])
+                first = False
+            else:
+                thisinput = np.concatenate((thisinput, np.load('input/MLInput/' + lists_of_inputfiles_sig[i][j])))
+                thiseventweight = np.concatenate((thiseventweight, np.load('input/MLInput/Weights_' + lists_of_inputfiles_sig[i][j])))
+        thisinput = thisinput.astype(np.float32)
+        thiseventweight = thiseventweight.astype(np.float32)
+        all_signals[i] = thisinput
+        all_signal_eventweights[i] = thiseventweight
+
 
     if len(all_inputs) != len(classes) or len(all_labels) != len(classes) or len(all_labels) != len(all_eventweights):
         raise ValueError('Number of input classes or labels or eventweights read in does not match number of classes defined in GetInputs().')
@@ -97,6 +131,8 @@ def GetInputs(parameters):
     label_concatenated = np.concatenate((tuple([all_labels[i] for i in range(len(all_labels))])))
     input_total = np.concatenate((tuple([all_inputs[i] for i in range(len(all_inputs))])))
     eventweight_total = np.concatenate((tuple([all_eventweights[i] for i in range(len(all_eventweights))])))
+    # signal_total = np.concatenate((tuple([all_signals[i] for i in range(len(all_signals))])))
+    # signal_eventweight_total = np.concatenate((tuple([all_signal_eventweights[i] for i in range(len(all_signal_eventweights))])))
 
     # Now create matrix with labels, it's zero everywhere, only the column corresponding to the class the example belongs to has ones
     labels_total = np.zeros((label_concatenated.shape[0], len(classes)))
@@ -109,12 +145,19 @@ def GetInputs(parameters):
     input_total[input_total == inf]    = 999999.
     input_total[input_total == -inf]   = -999999.
     input_total[np.isnan(input_total)] = 0.
+    # signal_total[signal_total == inf]    = 999999.
+    # signal_total[signal_total == -inf]   = -999999.
+    # signal_total[np.isnan(signal_total)] = 0.
 
     shuffle = np.random.permutation(np.size(input_total, axis=0))
     input_total       = input_total[shuffle]
     labels_total      = labels_total[shuffle]
     eventweight_total = eventweight_total[shuffle]
     label_concatenated = label_concatenated[shuffle]
+    for i in all_signals.keys():
+        shuffle_signal = np.random.permutation(np.size(all_signals[i], axis=0))
+        all_signals[i]       = all_signals[i][shuffle_signal]
+        all_signal_eventweights[i] = all_signal_eventweights[i][shuffle_signal]
 
     # Cut off some events if not running on full sample
     # percentage = 0.01
@@ -123,6 +166,8 @@ def GetInputs(parameters):
     frac_test  = 0.167 * percentage
     frac_val   = 0.167 * percentage
     sumweights = np.sum(eventweight_total, axis=0)
+    print 'shape of all inputs: ', input_total.shape
+    print 'shape and sum of event weights: ', eventweight_total.shape, sumweights
     cutoffweighted_train = float(sumweights)*float(frac_train)
     cutoffweighted_test  = float(sumweights)*float(frac_train + frac_test)
     cutoffweighted_val   = float(sumweights)*float(frac_train + frac_test + frac_val)
@@ -159,10 +204,7 @@ def GetInputs(parameters):
     input_val = input_total[takeupto_test:takeupto_val]
     labels_val = labels_total[takeupto_test:takeupto_val]
     eventweight_val = eventweight_total[takeupto_test:takeupto_val]
-    # cutoffat = int(percentage*np.size(input_total, axis=0))
-    # input_total       = input_total[range(cutoffat)]
-    # labels_total      = labels_total[range(cutoffat)]
-    # eventweight_total = eventweight_total[range(cutoffat)]
+    print 'shapes of inputs (train, test, val): ', input_train.shape, input_test.shape, input_val.shape
 
     # Calculate class weights such, that after weighting by class_weight all classes have the same number of weighted events, where all events are ALSO weighted by eventweight --> total weight = class_weight * eventweight
     class_weights = {}
@@ -213,61 +255,38 @@ def GetInputs(parameters):
     sample_weights_test = np.asarray(sample_weights_test_list).ravel()
     sample_weights_val = np.asarray(sample_weights_val_list).ravel()
 
-    # class_weights = {}
-    # class_weights_tmp = class_weight.compute_class_weight('balanced', np.unique(np.array(range(len(classes)))), label_concatenated)
-    # for i in range(len(classes)):
-    #     class_weights[i] = class_weights_tmp[i]
-
-    # input_train, input_test, labels_train, labels_test, eventweight_train, eventweight_test = train_test_split(input_total, labels_total, eventweight_total, random_state=42, train_size=0.67)
-    # input_val, input_test, labels_val, labels_test, eventweight_val, eventweight_test = train_test_split(input_test, labels_test, eventweight_test, random_state=42, train_size=0.5)
-
     eventweight_train = np.asarray(eventweight_train).ravel()
     eventweight_test  = np.asarray(eventweight_test).ravel()
     eventweight_val   = np.asarray(eventweight_val).ravel()
+    for i in all_signal_eventweights.keys():
+        all_signal_eventweights[i] = np.asarray(all_signal_eventweights[i]).ravel()
 
     # Scale features
-    # scaler = preprocessing.StandardScaler().fit(input_train)
     scaler = preprocessing.StandardScaler()
     scaler.mean_ = np.mean(input_train, axis=0)
     scaler.scale_ = np.std(input_train, axis=0)
-    scaler.transform(input_train)
-    scaler.transform(input_test)
-    scaler.transform(input_val)
-
-
-
-
-    # Build sample weights (1 weight per training example) from class weights and labels
-    # classes_train = []
-    # classes_test = []
-    # classes_val = []
-    # for i in range(len(labels_train[:,0])):
-    #     #loop over training examples i
-    #     for j in range(len(labels_train[i,:])):
-    #         #loop over possible classes j
-    #         if labels_train[i,j] == 1: classes_train.append(j)
-    # for i in range(len(labels_test[:,0])):
-    #     #loop over training examples i
-    #     for j in range(len(labels_test[i,:])):
-    #         #loop over possible classes j
-    #         if labels_test[i,j] == 1: classes_test.append(j)
-    # for i in range(len(labels_val[:,0])):
-    #     #loop over training examples i
-    #     for j in range(len(labels_val[i,:])):
-    #         #loop over possible classes j
-    #         if labels_val[i,j] == 1: classes_val.append(j)
-    # sample_weights_train = np.array([class_weights[classes_train[i]] for i in range(len(classes_train))])
-    # sample_weights_test = np.array([class_weights[classes_test[i]] for i in range(len(classes_test))])
-    # sample_weights_val = np.array([class_weights[classes_val[i]] for i in range(len(classes_val))])
-    # print class_weights
-    # print 'after scaling, we have the following weighted number of class0 events: %f, class1: %f' % (len(all_inputs[0])*class_weights[0], len(all_inputs[1])*class_weights[1])
+    input_train = deepcopy(scaler.transform(input_train))
+    input_test = deepcopy(scaler.transform(input_test))
+    input_val = deepcopy(scaler.transform(input_val))
+    for i in all_signals.keys():
+        all_signals[i] = deepcopy(scaler.transform(all_signals[i]))
 
 
     classtag = get_classes_tag(parameters)
 
-
     with open('input/MLInput/variable_names.pkl', 'r') as f:
         variable_names = pickle.load(f)
+
+    # Write out scaler info
+    with open('input/'+classtag+'/NormInfo.txt', 'w') as f:
+        for i in range(scaler.mean_.shape[0]):
+            var = variable_names[i]
+            mean = scaler.mean_[i]
+            scale = scaler.scale_[i]
+            line = var + ' StandardScaler ' + str(mean) + ' ' + str(scale) + '\n'
+            f.write(line)
+
+
     with open('input/'+classtag+'/variable_names.pkl', 'w') as f:
         pickle.dump(variable_names, f)
     np.save('input/'+classtag+'/input_'+fraction+'_train.npy'  , input_train)
@@ -276,15 +295,16 @@ def GetInputs(parameters):
     np.save('input/'+classtag+'/labels_'+fraction+'_train.npy' , labels_train)
     np.save('input/'+classtag+'/labels_'+fraction+'_test.npy'  , labels_test)
     np.save('input/'+classtag+'/labels_'+fraction+'_val.npy'   , labels_val)
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_train.pkl', 'w') as f:
-        pickle.dump(sample_weights_train, f)
-    with open('input/'+classtag+'/eventweights_'+fraction+'_train.pkl', 'w') as f:
-        pickle.dump(eventweight_train, f)
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_test.pkl', 'w') as f:
-        pickle.dump(sample_weights_test, f)
-    with open('input/'+classtag+'/eventweights_'+fraction+'_test.pkl', 'w') as f:
-        pickle.dump(eventweight_test, f)
-    with open('input/'+classtag+'/sample_weights_'+fraction+'_val.pkl', 'w') as f:
-        pickle.dump(sample_weights_val, f)
-    with open('input/'+classtag+'/eventweights_'+fraction+'_val.pkl', 'w') as f:
-        pickle.dump(eventweight_val, f)
+
+    np.save('input/'+classtag+'/sample_weights_'+fraction+'_train.npy', sample_weights_train)
+    np.save('input/'+classtag+'/eventweights_'+fraction+'_train.npy', eventweight_train)
+    np.save('input/'+classtag+'/sample_weights_'+fraction+'_test.npy', sample_weights_test)
+    np.save('input/'+classtag+'/eventweights_'+fraction+'_test.npy', eventweight_test)
+    np.save('input/'+classtag+'/sample_weights_'+fraction+'_val.npy', sample_weights_val)
+    np.save('input/'+classtag+'/eventweights_'+fraction+'_val.npy', eventweight_val)
+
+
+
+    for i in all_signals.keys():
+        np.save('input/'+classtag+'/'+signal_identifiers[i]+'.npy', all_signals[i])
+        np.save('input/'+classtag+'/'+signal_identifiers[i]+'_eventweight.npy', all_signal_eventweights[i])
