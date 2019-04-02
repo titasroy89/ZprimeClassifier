@@ -74,8 +74,8 @@ def GetInputs(parameters):
                 else:
                     thisinput = np.concatenate((thisinput, np.load('input/MLInput/' + lists_of_inputfiles[i][j])))
                     thiseventweight = np.concatenate((thiseventweight, np.load('input/MLInput/Weights_' + lists_of_inputfiles[i][j])))
-        thisinput = thisinput.astype(np.float32)
-        thiseventweight = thiseventweight.astype(np.float32)
+        # thisinput = thisinput.astype(np.float32)
+        # thiseventweight = thiseventweight.astype(np.float32)
         all_inputs[cl] = thisinput
         all_eventweights[cl] = thiseventweight
 
@@ -148,6 +148,8 @@ def GetInputs(parameters):
     # signal_total[signal_total == inf]    = 999999.
     # signal_total[signal_total == -inf]   = -999999.
     # signal_total[np.isnan(signal_total)] = 0.
+
+    print input_total[labels_total[:,2]==1][0]
 
     shuffle = np.random.permutation(np.size(input_total, axis=0))
     input_total       = input_total[shuffle]

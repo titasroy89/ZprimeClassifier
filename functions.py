@@ -8,6 +8,8 @@ from sklearn import preprocessing, svm
 from sklearn.metrics import roc_auc_score, roc_curve, auc, confusion_matrix
 from sklearn.utils.extmath import stable_cumsum
 from sklearn.utils import check_consistent_length, assert_all_finite, column_or_1d, check_array
+import scipy.optimize as opt
+from scipy.optimize import fsolve
 from sklearn.utils.multiclass import type_of_target
 from sklearn.model_selection import train_test_split
 from IPython.display import FileLink, FileLinks
@@ -265,54 +267,72 @@ def get_cut_efficiencies(parameters, predictions, thresholds, weights):
 
 
 
-def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, pred_train, labels_train, eventweights_val, sample_weights_val, pred_val, labels_val):
+def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, pred_train, labels_train, eventweights_val, sample_weights_val, pred_val, labels_val, eventweights_test, sample_weights_test, pred_test, labels_test):
     classes = parameters['classes']
     eqweight = parameters['eqweight']
     pred_trains = {}
     pred_vals = {}
+    pred_tests = {}
     weights_trains = {}
     weights_vals = {}
+    weights_tests = {}
     normweights_trains = {}
     normweights_vals = {}
+    normweights_tests = {}
     lumiweights_trains = {}
     lumiweights_vals = {}
+    lumiweights_tests = {}
 
     for cl in classes.keys():
         pred_trains_thistrueclass = {}
         pred_vals_thistrueclass = {}
+        pred_tests_thistrueclass = {}
         weights_trains_thistrueclass = {}
         weights_vals_thistrueclass = {}
+        weights_tests_thistrueclass = {}
         normweights_trains_thistrueclass = {}
         normweights_vals_thistrueclass = {}
+        normweights_tests_thistrueclass = {}
         lumiweights_trains_thistrueclass = {}
         lumiweights_vals_thistrueclass = {}
+        lumiweights_tests_thistrueclass = {}
         for node in classes.keys():
             if not eqweight:
                 weights_trains_thistrueclass[node] = eventweights_train[labels_train[:,cl] == 1]
                 weights_vals_thistrueclass[node] = eventweights_val[labels_val[:,cl] == 1]
+                weights_tests_thistrueclass[node] = eventweights_test[labels_test[:,cl] == 1]
             else:
                 weights_trains_thistrueclass[node] = sample_weights_train[labels_train[:,cl] == 1]
                 weights_vals_thistrueclass[node]   = sample_weights_val[labels_val[:,cl] == 1]
+                weights_tests_thistrueclass[node]   = sample_weights_test[labels_test[:,cl] == 1]
 
             pred_trains_thistrueclass[node] = pred_train[:,node][labels_train[:,cl] == 1]
             pred_vals_thistrueclass[node] = pred_val[:,node][labels_val[:,cl] == 1]
+            pred_tests_thistrueclass[node] = pred_test[:,node][labels_test[:,cl] == 1]
             lumiweights_trains_thistrueclass[node] = eventweights_train[labels_train[:,cl] == 1]
             lumiweights_vals_thistrueclass[node] = eventweights_val[labels_val[:,cl] == 1]
+            lumiweights_tests_thistrueclass[node] = eventweights_test[labels_test[:,cl] == 1]
             sum_train = weights_trains_thistrueclass[node].sum()
             sum_val   = weights_vals_thistrueclass[node].sum()
+            sum_test   = weights_tests_thistrueclass[node].sum()
             normweights_trains_thistrueclass[node] = np.array([1./sum_train for j in range(weights_trains_thistrueclass[node].shape[0])])
             normweights_vals_thistrueclass[node]   = np.array([1./sum_val for j in range(weights_vals_thistrueclass[node].shape[0])])
+            normweights_tests_thistrueclass[node]   = np.array([1./sum_test for j in range(weights_tests_thistrueclass[node].shape[0])])
 
         pred_trains[cl] = pred_trains_thistrueclass
         pred_vals[cl] = pred_vals_thistrueclass
+        pred_tests[cl] = pred_tests_thistrueclass
         weights_trains[cl] = weights_trains_thistrueclass
         weights_vals[cl] = weights_vals_thistrueclass
+        weights_tests[cl] = weights_tests_thistrueclass
         normweights_trains[cl] = normweights_trains_thistrueclass
         normweights_vals[cl] = normweights_vals_thistrueclass
+        normweights_tests[cl] = normweights_tests_thistrueclass
         lumiweights_trains[cl] = lumiweights_trains_thistrueclass
         lumiweights_vals[cl] = lumiweights_vals_thistrueclass
+        lumiweights_tests[cl] = lumiweights_tests_thistrueclass
 
-    return pred_trains, weights_trains, normweights_trains, lumiweights_trains, pred_vals, weights_vals, normweights_vals, lumiweights_vals
+    return pred_trains, weights_trains, normweights_trains, lumiweights_trains, pred_vals, weights_vals, normweights_vals, lumiweights_vals, pred_tests, weights_tests, normweights_tests, lumiweights_tests
 
 
 def get_indices_wrong_predictions(labels, preds):
@@ -428,6 +448,42 @@ def plot_confusion_matrix(cm, classes,
 def log_model_performance(parameters, model_history, outputfolder):
     loss_train = model_history['loss']
     loss_val = model_history['val_loss']
+
+    #Fit Losses
+    x, fitx, fitfunc, pars_train = fit_loss(model_history['loss'])
+    x, fitx, fitfunc, pars_val = fit_loss(model_history['val_loss'])
+
+    #build difference
+    pars = [pars_train, pars_val]
+    # def func_diff(fitx, mypars):
+    #     return fitfunc(fitx, *mypars[0]) - fitfunc(fitx, *mypars[1])
+    def func_diff(x, fitfunc, pars):
+        return fitfunc(x, *(pars[0])) - fitfunc(x, *(pars[1]))
+
+    #Find intersection between losses - aka roots of (f_train - f_val)
+    # sol = opt.root_scalar(func_diff, (pars))
+    roots = fsolve(func_diff, [100.], (fitfunc, pars))
+    print roots
+
+    # Get closest integer numbers
+    for root in roots:
+        x_low = int(math.floor(root))
+        x_high = int(math.ceil(root))
+
+    # compare losses at these values, pick the one where difference of losses is smallest
+        diff_xlow = math.fabs(fitfunc(x_low, *pars_train) - fitfunc(x_low, *pars_val))
+        diff_xhigh = math.fabs(fitfunc(x_high, *pars_train) - fitfunc(x_high, *pars_val))
+        bestloss_val = fitfunc(x_low, *pars_val)
+        bestx = x_low - 1
+        if diff_xhigh < diff_xlow:
+            bestloss_val = fitfunc(x_high, *pars_val)
+            bestx = x_high - 1
+        if root < 10:
+            bestloss_val = 999999
+            bestx = 999999
+        print "Validation loss in point of closest approach: %f, reached after %i epochs" % (bestloss_val, bestx)
+
+
     acc_train = model_history['categorical_accuracy']
     acc_val = model_history['val_categorical_accuracy']
     tag = dict_to_str(parameters)
@@ -435,6 +491,7 @@ def log_model_performance(parameters, model_history, outputfolder):
         f.write('\n\n====================\n')
         f.write('Tag: %s\n\n' % (tag))
         f.write('Minimum validation loss reached after %i epochs\n' % (loss_val.index(min(loss_val))))
+        f.write('Validation loss in point of closest approach: %2.3f, reached after %i epochs\n' % (bestloss_val, bestx))
         f.write('Performance: training loss (min, final) -- validation loss (min, final) -- training acc (min, final) -- validation acc (min, final)\n')
         f.write('                         ({0:2.3f}, {1:2.3f}) --               ({2:2.3f}, {3:2.3f}) --            ({4:1.3f}, {5:1.3f}) --              ({6:1.3f}, {7:1.3f})\n'.format(min(loss_train), loss_train[len(loss_train)-1], min(loss_val), loss_val[len(loss_val)-1], min(acc_train), acc_train[len(acc_train)-1], min(acc_val), acc_val[len(acc_val)-1]))
 
@@ -644,19 +701,47 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
 
 def plot_loss(parameters, plotfolder, model_history):
     print 'Starting to plot Loss'
+
+    # def fitfunc(x, a, b, c, d, e):
+    #     return a + b/x + c*x + d*x*x + e/x/x
+
     tag = dict_to_str(parameters)
     plt.clf()
     fig = plt.figure()
     plt.grid()
-    plt.plot(model_history['loss'], label = 'Training set')
-    plt.plot(model_history['val_loss'], label = 'Validation set')
+    x, fitx, fitfunc, postfitpars_train = fit_loss(model_history['loss'])
+    x, fitx, fitfunc, postfitpars_val = fit_loss(model_history['val_loss'])
+
+    plt.plot(x, model_history['loss'], label = 'Training set')
+    plt.plot(x, model_history['val_loss'], label = 'Validation set')
+    plt.plot(fitx, fitfunc(fitx, *postfitpars_train), label="Fit (training set)")
+    plt.plot(fitx, fitfunc(fitx, *postfitpars_val), label="Fit (validation set)")
+
     plt.legend(loc='upper right')
-    maximum = max(model_history['loss'][0], model_history['val_loss'][0]) * 3
-    # plt.ylim([0., maximum])
+    plt.ylim([0.1, 0.25])
     plt.ylabel('Loss')
     plt.xlabel('Number of training epochs')
     fig.savefig(plotfolder+'/Loss.pdf')
     plt.close()
+
+def fit_loss(losslist, maxfev=50000):
+
+    def fitfunc(x, a, b, c, d, e):
+        return a + b/x + c*x + d*x*x + e/x/x
+
+    x = range(len(losslist)+1)
+    x = x[1:]
+    x = np.array(x)
+    fitx = x[9:]
+    fity = losslist[9:]
+
+    postfitpars, cov = opt.curve_fit(fitfunc, fitx, fity, maxfev=maxfev)
+
+    return x, fitx, fitfunc, postfitpars
+
+
+
+
 
 
 def plot_accuracy(parameters, plotfolder, model_history):
@@ -665,8 +750,10 @@ def plot_accuracy(parameters, plotfolder, model_history):
     plt.clf()
     fig = plt.figure()
     plt.grid()
-    plt.plot(model_history['categorical_accuracy'], label = 'Training set')
-    plt.plot(model_history['val_categorical_accuracy'], label = 'Validation set')
+    x = range(len(model_history['categorical_accuracy'])+1)
+    x = x[1:]
+    plt.plot(x, model_history['categorical_accuracy'], label = 'Training set')
+    plt.plot(x, model_history['val_categorical_accuracy'], label = 'Validation set')
     plt.legend(loc='lower right')
     plt.ylim([0., 1.05])
     plt.ylabel('Prediction accuracy')
@@ -934,6 +1021,7 @@ def plot_outputs_1d_nodes(parameters, plotfolder, pred_trains, labels_train, wei
         classtitle_to_use = ''
         for i in range(labels_train.shape[1]):
             plt.errorbar(bin_centers[i], y_vals[i], yerr=yerrs[i], fmt = '.', drawstyle = 'steps-mid', linestyle=' ', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            # print i, y_vals[i]
             if i == cl:
                 classtitle_to_use = classtitles[i]
         if do_sig:

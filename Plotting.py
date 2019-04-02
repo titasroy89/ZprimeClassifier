@@ -44,7 +44,10 @@ def PlotPerformance(parameters, inputfolder, outputfolder, filepostfix, plotfold
     # Get inputs
     input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, eventweight_signals, normweight_signals = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
 
-    pred_train, pred_test, pred_val, pred_signals = load_predictions(outputfolder=outputfolder, filepostfix=filepostfix)
+    predpostfix = ''
+    if use_best_model:
+        predpostfix = '_best'
+    pred_train, pred_test, pred_val, pred_signals = load_predictions(outputfolder=outputfolder, filepostfix=predpostfix)
 
 
 
@@ -53,21 +56,41 @@ def PlotPerformance(parameters, inputfolder, outputfolder, filepostfix, plotfold
 
     log_model_performance(parameters=parameters, model_history=model_history, outputfolder=outputfolder)
     plot_loss(parameters=parameters, plotfolder=plotfolder, model_history=model_history)
-    plot_accuracy(parameters=parameters, plotfolder=plotfolder, model_history=model_history)
-    plot_rocs(parameters=parameters, plotfolder=plotfolder, pred_val=pred_val, labels_val=labels_val, sample_weights_val=sample_weights_val, eventweights_val=eventweights_val, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals, use_best_model=use_best_model)
-    plot_model(model, show_shapes=True, to_file=plotfolder+'/Model.pdf')
-    plot_confusion_matrices(parameters=parameters, plotfolder=plotfolder, pred_train=pred_train, labels_train=labels_train, sample_weights_train=sample_weights_train, eventweights_train=eventweights_train, pred_val=pred_val, labels_val=labels_val, sample_weights_val=sample_weights_val, eventweights_val=eventweights_val, use_best_model=use_best_model)
+    # plot_accuracy(parameters=parameters, plotfolder=plotfolder, model_history=model_history)
+    # plot_rocs(parameters=parameters, plotfolder=plotfolder, pred_val=pred_val, labels_val=labels_val, sample_weights_val=sample_weights_val, eventweights_val=eventweights_val, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    # plot_model(model, show_shapes=True, to_file=plotfolder+'/Model.pdf')
+    # plot_confusion_matrices(parameters=parameters, plotfolder=plotfolder, pred_train=pred_train, labels_train=labels_train, sample_weights_train=sample_weights_train, eventweights_train=eventweights_train, pred_val=pred_val, labels_val=labels_val, sample_weights_val=sample_weights_val, eventweights_val=eventweights_val, use_best_model=use_best_model)
+    #
+    #
+    # pred_trains, weights_trains, normweights_trains, lumiweights_trains, pred_vals, weights_vals, normweights_vals, lumiweights_vals, pred_tests, weights_tests, normweights_tests, lumiweights_tests = get_data_dictionaries(parameters=parameters, eventweights_train=eventweights_train, sample_weights_train=sample_weights_train, pred_train=pred_train, labels_train=labels_train, eventweights_val=eventweights_val, sample_weights_val=sample_weights_val, pred_val=pred_val, labels_val=labels_val, eventweights_test=eventweights_test, sample_weights_test=sample_weights_test, pred_test=pred_test, labels_test=labels_test)
+    # plot_outputs_1d_nodes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, pred_signals=pred_signals, eventweight_signals=eventweight_signals, normweight_signals=normweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    #
+    # plot_outputs_1d_classes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, use_best_model=use_best_model)
+    # # plot_outputs_2d(parameters=parameters, plotfolder=plotfolder, pred_vals=pred_vals, lumiweights_vals=lumiweights_vals, use_best_model=use_best_model)
+    # best_cuts = cut_iteratively(parameters=parameters, outputfolder=outputfolder, pred_val=pred_val, labels_val=labels_val, eventweights_val=eventweights_val, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals)
+    # plot_cuts(parameters=parameters, outputfolder=outputfolder, plotfolder=plotfolder, best_cuts=best_cuts, pred_vals=pred_vals, labels_val=labels_val, lumiweights_vals=lumiweights_vals, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    # apply_cuts(parameters=parameters, outputfolder=outputfolder, best_cuts=best_cuts, input_train=input_train, input_val=input_val, input_test=input_test, labels_train=labels_train, labels_val=labels_val, labels_test=labels_test, sample_weights_train=sample_weights_train, sample_weights_val=sample_weights_val, sample_weights_test=sample_weights_test, eventweights_train=eventweights_train, eventweights_val=eventweights_val, eventweights_test=eventweights_test, pred_train=pred_train, pred_val=pred_val, pred_test=pred_test, signals=signals, eventweight_signals=eventweight_signals, pred_signals=pred_signals, signal_identifiers=signal_identifiers, use_best_model=use_best_model)
 
-    # make plots with signals
 
-
-    pred_trains, weights_trains, normweights_trains, lumiweights_trains, pred_vals, weights_vals, normweights_vals, lumiweights_vals = get_data_dictionaries(parameters=parameters, eventweights_train=eventweights_train, sample_weights_train=sample_weights_train, pred_train=pred_train, labels_train=labels_train, eventweights_val=eventweights_val, sample_weights_val=sample_weights_val, pred_val=pred_val, labels_val=labels_val)
-    plot_outputs_1d_nodes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, pred_signals=pred_signals, eventweight_signals=eventweight_signals, normweight_signals=normweight_signals, usesignals=usesignals, use_best_model=use_best_model)
-    plot_outputs_1d_classes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, use_best_model=use_best_model)
-    # plot_outputs_2d(parameters=parameters, plotfolder=plotfolder, pred_vals=pred_vals, lumiweights_vals=lumiweights_vals, use_best_model=use_best_model)
-    best_cuts = cut_iteratively(parameters=parameters, outputfolder=outputfolder, pred_val=pred_val, labels_val=labels_val, eventweights_val=eventweights_val, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals)
-    plot_cuts(parameters=parameters, outputfolder=outputfolder, plotfolder=plotfolder, best_cuts=best_cuts, pred_vals=pred_vals, labels_val=labels_val, lumiweights_vals=lumiweights_vals, pred_signals=pred_signals, eventweight_signals=eventweight_signals, usesignals=usesignals, use_best_model=use_best_model)
-    apply_cuts(parameters=parameters, outputfolder=outputfolder, best_cuts=best_cuts, input_train=input_train, input_val=input_val, input_test=input_test, labels_train=labels_train, labels_val=labels_val, labels_test=labels_test, sample_weights_train=sample_weights_train, sample_weights_val=sample_weights_val, sample_weights_test=sample_weights_test, eventweights_train=eventweights_train, eventweights_val=eventweights_val, eventweights_test=eventweights_test, pred_train=pred_train, pred_val=pred_val, pred_test=pred_test, signals=signals, eventweight_signals=eventweight_signals, pred_signals=pred_signals, signal_identifiers=signal_identifiers, use_best_model=use_best_model)
+    # for cl in range(labels_train.shape[1]):
+    #     # 'cl' is the output node number
+    #     nbins = np.array([0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0001])
+    #     y_trains = {}
+    #     y_vals = {}
+    #     y_tests = {}
+    #     ytots = {}
+    #
+    #
+    #
+    #     for i in range(labels_train.shape[1]):
+    #         # 'i' is the true class (always the first index)
+    #         y_trains[i], dummy = np.histogram(pred_trains[i][cl], bins=nbins, weights=lumiweights_trains[i][cl])
+    #         y_vals[i], dummy = np.histogram(pred_vals[i][cl], bins=nbins, weights=lumiweights_vals[i][cl])
+    #         y_tests[i], dummy = np.histogram(pred_tests[i][cl], bins=nbins, weights=lumiweights_tests[i][cl])
+    #         ytots[i] = y_trains[i] + y_vals[i] + y_tests[i]
+    #         print "node %i, class %i" % (cl, i)
+    #         print ytots[i]
+    #         print 'sum: %f' % (ytots[i].sum())
 
 
 

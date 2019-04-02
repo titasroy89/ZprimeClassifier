@@ -34,7 +34,11 @@ def RankNetworks(outputfolder):
             print 'couldn\'t open file %s, skipping this one.' % (outputfolder+tag+'/ModelPerformance.txt')
             continue
         # print 'found file "%s"' % (outputfolder+tag+'/ModelPerformance.txt')
+        if not 'runonfraction_099' in tag: continue
+        if not 'epochs_250' in tag: continue
+        # if not 'regrate_080000' in tag: continue
         lines = infile.readlines()
+        vallossclosest = -1
         for line in lines:
             """if 'Tag:' == line[0:4]:
                 tag = line.split(' ')[1]
@@ -45,14 +49,20 @@ def RankNetworks(outputfolder):
                 vallossmin = vallosses.split(',')[0].replace('(','')
                 vallossfin = vallosses.split(',')[1].replace(')','')
                 # print line
+            elif 'Validation loss in point of closest approach' in line:
+                line = line.split(':')[1]
+                line = line.replace(' ','')
+                vallossclosest = line.split(',')[0]
+        if vallossclosest == -1:
+            continue
         if ('eqweight_False' in tag) or ('equallyweighted_False' in tag):
             print tag
             # print vallossmin, vallossfin
-            modelresults_lumiweighted[tag] = [float(vallossmin), float(vallossfin)]
+            modelresults_lumiweighted[tag] = [float(vallossclosest), float(vallossmin), float(vallossfin)]
             print modelresults_lumiweighted[tag]
             print len(modelresults_lumiweighted)
         elif ('eqweight_True') in tag or ('equallyweighted_True' in tag):
-            modelresults_equallyweighted[tag] = [float(vallossmin), float(vallossfin)]
+            modelresults_equallyweighted[tag] = [float(vallossclosest), float(vallossmin), float(vallossfin)]
         else:
             raise ValueError('the part "eqweight_(True|False)" is not in the tag.')
         infile.close()
