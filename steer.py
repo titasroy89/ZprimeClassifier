@@ -23,7 +23,7 @@ from GetInputs import *
 from RankNetworks import *
 from PredictExternal import *
 from functions import *
-from TrainModelOnPredictions import *
+#from TrainModelOnPredictions import *
 from TrainSecondNetwork import *
 from TrainThirdNetwork import *
 from ExportModel import *
@@ -32,7 +32,7 @@ from ExportModel import *
 
 
 
-parameters = {'layers':[512, 512],
+parameters = {'layers':[512, 256, 128, 64, 32],
               'batchsize': 8192,
               'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
               # 'classes':{0: ['QCD_Mu'], 1: ['TTbar', 'DYJets', 'WJets', 'ST']},
@@ -40,11 +40,14 @@ parameters = {'layers':[512, 512],
               # 'classes':{0: ['TTbar'], 1:['ST']},
               # 'classes':{0: ['TTbar'], 1: ['DYJets', 'WJets', 'ST']},
               'regmethod': 'dropout',
-              'regrate':0.50000,
+              'regrate':0.40000,
               'batchnorm': True,
-              'epochs':500,
+#              'epochs':500,
+#              'epochs':10,
+              'epochs':10,
               'learningrate': 0.00100,
-              'runonfraction': 0.99,
+#              'runonfraction': 0.99,
+              'runonfraction': 0.10,
               'eqweight':False}
 
 parameters_onpredictions ={'layers':[20, 20],

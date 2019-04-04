@@ -60,13 +60,13 @@ def GetInputs(parameters):
                     tmp.append(inputfiles[j])
                     idx += 1
             lists_of_inputfiles.append(tmp)
-        print lists_of_inputfiles
+        print(lists_of_inputfiles)
 
         # Read files for this class
         for i in range(len(lists_of_inputfiles)):
-            print '\nNow starting with sample %s' % (classes[cl][i])
+            print('\nNow starting with sample %s' % (classes[cl][i]))
             for j in range(len(lists_of_inputfiles[i])):
-                print 'At file no. %i out of %i.' % (j+1, len(lists_of_inputfiles[i]))
+                print('At file no. %i out of %i.' % (j+1, len(lists_of_inputfiles[i])))
                 if first:
                     thisinput = np.load('input/MLInput/' + lists_of_inputfiles[i][j])
                     thiseventweight = np.load('input/MLInput/Weights_' + lists_of_inputfiles[i][j])
@@ -102,14 +102,14 @@ def GetInputs(parameters):
                 tmp.append(inputfiles[j])
                 idx += 1
         lists_of_inputfiles_sig.append(tmp)
-    print lists_of_inputfiles_sig
+    print(lists_of_inputfiles_sig)
 
     # Read files for this class
     for i in range(len(lists_of_inputfiles_sig)):
-        print '\nNow starting with sample %s' % (signal_identifiers[i])
+        print('\nNow starting with sample %s' % (signal_identifiers[i]))
         first = True
         for j in range(len(lists_of_inputfiles_sig[i])):
-            print 'At file no. %i out of %i.' % (j+1, len(lists_of_inputfiles_sig[i]))
+            print('At file no. %i out of %i.' % (j+1, len(lists_of_inputfiles_sig[i])))
             if first:
                 thisinput = np.load('input/MLInput/' + lists_of_inputfiles_sig[i][j])
                 thiseventweight = np.load('input/MLInput/Weights_' + lists_of_inputfiles_sig[i][j])
@@ -166,8 +166,8 @@ def GetInputs(parameters):
     frac_test  = 0.167 * percentage
     frac_val   = 0.167 * percentage
     sumweights = np.sum(eventweight_total, axis=0)
-    print 'shape of all inputs: ', input_total.shape
-    print 'shape and sum of event weights: ', eventweight_total.shape, sumweights
+    print('shape of all inputs: ', input_total.shape)
+    print('shape and sum of event weights: ', eventweight_total.shape, sumweights)
     cutoffweighted_train = float(sumweights)*float(frac_train)
     cutoffweighted_test  = float(sumweights)*float(frac_train + frac_test)
     cutoffweighted_val   = float(sumweights)*float(frac_train + frac_test + frac_val)
@@ -204,7 +204,7 @@ def GetInputs(parameters):
     input_val = input_total[takeupto_test:takeupto_val]
     labels_val = labels_total[takeupto_test:takeupto_val]
     eventweight_val = eventweight_total[takeupto_test:takeupto_val]
-    print 'shapes of inputs (train, test, val): ', input_train.shape, input_test.shape, input_val.shape
+    print('shapes of inputs (train, test, val): ', input_train.shape, input_test.shape, input_val.shape)
 
     # Calculate class weights such, that after weighting by class_weight all classes have the same number of weighted events, where all events are ALSO weighted by eventweight --> total weight = class_weight * eventweight
     class_weights = {}

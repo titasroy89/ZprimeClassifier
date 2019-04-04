@@ -89,7 +89,7 @@ def get_fraction(parameters):
 
 def load_data(parameters, inputfolder, filepostfix):
 
-    print 'Loading data...'
+    print('Loading data...')
     tag = dict_to_str(parameters)
     classtag = get_classes_tag(parameters)
     fraction = get_fraction(parameters)
@@ -122,7 +122,7 @@ def load_data(parameters, inputfolder, filepostfix):
 
 def load_predictions(outputfolder, filepostfix):
 
-    print 'Loading predictions...'
+    print('Loading predictions...')
     signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
 
     # Load model prediction
@@ -446,7 +446,7 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
     classes = parameters['classes']
     do_sig = (pred_signals is not None) and (eventweight_signals is not None)
 
-    print 'plotting ROC curves'
+    print('plotting ROC curves')
     # Inclusive backgrounds
     # equallyweighted
     FalsePositiveRates, TruePositiveRates, Thresholds, aucs, SignalPuritys = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_val, labels_val=labels_val, weights_val=sample_weights_val)
@@ -643,7 +643,7 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
 
 
 def plot_loss(parameters, plotfolder, model_history):
-    print 'Starting to plot Loss'
+    print('Starting to plot Loss')
     tag = dict_to_str(parameters)
     plt.clf()
     fig = plt.figure()
@@ -660,7 +660,7 @@ def plot_loss(parameters, plotfolder, model_history):
 
 
 def plot_accuracy(parameters, plotfolder, model_history):
-    print 'Starting to plot accuracy'
+    print('Starting to plot accuracy')
     tag = dict_to_str(parameters)
     plt.clf()
     fig = plt.figure()
@@ -675,7 +675,7 @@ def plot_accuracy(parameters, plotfolder, model_history):
 
 
 def plot_weight_updates(parameters, model, input_val):
-    print 'Starting to plot weights'
+    print('Starting to plot weights')
     tag = dict_to_str(parameters)
     epochs = parameters['epochs']
     tmp = os.listdir('output/'+tag)
@@ -750,7 +750,7 @@ def plot_weight_updates(parameters, model, input_val):
 
 
 def plot_confusion_matrices(parameters, plotfolder, pred_train, labels_train, sample_weights_train, eventweights_train, pred_val, labels_val, sample_weights_val, eventweights_val, use_best_model=False):
-    print 'Starting to plot confusion matrix'
+    print('Starting to plot confusion matrix')
     tag = dict_to_str(parameters)
     eqweight = parameters['eqweight']
     classtitles = get_classtitles(parameters)
@@ -833,7 +833,7 @@ def plot_confusion_matrices(parameters, plotfolder, pred_train, labels_train, sa
 
 
 def plot_outputs_2d(parameters, plotfolder, pred_vals, lumiweights_vals, use_best_model=False):
-    print 'Starting to plot 2d plots of output variables'
+    print('Starting to plot 2d plots of output variables')
     tag = dict_to_str(parameters)
     eqweight = parameters['eqweight']
     classes = parameters['classes']
@@ -869,7 +869,7 @@ def plot_outputs_2d(parameters, plotfolder, pred_vals, lumiweights_vals, use_bes
 
 def plot_outputs_1d_nodes(parameters, plotfolder, pred_trains, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, labels_val, weights_vals, lumiweights_vals, normweights_vals, pred_signals=None, eventweight_signals=None, normweight_signals=None, usesignals=[0], use_best_model=False):
 
-    print 'Starting to plot the classifier output distribution'
+    print('Starting to plot the classifier output distribution')
     tag = dict_to_str(parameters)
     classtitles = get_classtitles(parameters)
     do_sig = (pred_signals is not None) and (eventweight_signals is not None) and (normweight_signals is not None)
@@ -953,7 +953,7 @@ def plot_outputs_1d_nodes(parameters, plotfolder, pred_trains, labels_train, wei
 
 def plot_outputs_1d_classes(parameters, plotfolder, pred_trains, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, labels_val, weights_vals, lumiweights_vals, normweights_vals, use_best_model=False):
 
-    print 'Starting to plot the classifier output distribution'
+    print('Starting to plot the classifier output distribution')
     tag = dict_to_str(parameters)
     classtitles = get_classtitles(parameters)
 
@@ -1028,7 +1028,7 @@ def plot_outputs_1d_classes(parameters, plotfolder, pred_trains, labels_train, w
 
 def cut_iteratively(parameters, outputfolder, pred_val, labels_val, eventweights_val, pred_signals=None, eventweight_signals=None, usesignals=[0]):
 
-    print 'Starting to cut iteratively'
+    print('Starting to cut iteratively')
     tag = dict_to_str(parameters)
     classtitles = get_classtitles(parameters)
     classes = parameters['classes']
@@ -1073,7 +1073,7 @@ def cut_iteratively(parameters, outputfolder, pred_val, labels_val, eventweights
                 best_idx = idx
         sign_max[cl] = sign_max_this
         thr_cuts[cl] = Thresholds[cl][best_idx]
-        print 'best cut for class %s, output > %f, would have a significance of %f, keeping %f out of %f signal events (%f%%), while letting in %f out of %f background events (%f%%). Purity: %f' % (classtitles[cl], Thresholds[cl][best_idx], sign_max_this, TruePositiveRates[cl][best_idx] * nsig, nsig, TruePositiveRates[cl][best_idx]*100., FalsePositiveRates[cl][best_idx] * nbkg, nbkg, FalsePositiveRates[cl][best_idx]*100., TruePositiveRates[cl][best_idx] * nsig / (TruePositiveRates[cl][best_idx] * nsig + FalsePositiveRates[cl][best_idx] * nbkg))
+        print('best cut for class %s, output > %f, would have a significance of %f, keeping %f out of %f signal events (%f%%), while letting in %f out of %f background events (%f%%). Purity: %f' % (classtitles[cl], Thresholds[cl][best_idx], sign_max_this, TruePositiveRates[cl][best_idx] * nsig, nsig, TruePositiveRates[cl][best_idx]*100., FalsePositiveRates[cl][best_idx] * nbkg, nbkg, FalsePositiveRates[cl][best_idx]*100., TruePositiveRates[cl][best_idx] * nsig / (TruePositiveRates[cl][best_idx] * nsig + FalsePositiveRates[cl][best_idx] * nbkg)))
 
 
     #cut on distribution with highest significance
@@ -1095,7 +1095,7 @@ def cut_iteratively(parameters, outputfolder, pred_val, labels_val, eventweights
 
 def plot_cuts(parameters, outputfolder, plotfolder, best_cuts, pred_vals, labels_val, lumiweights_vals, pred_signals=None, eventweight_signals=None, usesignals=[0], use_best_model=False):
 
-    print 'plotting the cuts'
+    print('plotting the cuts')
     do_sig = (pred_signals is not None) and (eventweight_signals is not None)
     tag = dict_to_str(parameters)
     classtitles = get_classtitles(parameters)
@@ -1289,7 +1289,7 @@ def plot_cuts(parameters, outputfolder, plotfolder, best_cuts, pred_vals, labels
 
 def apply_cuts(parameters, outputfolder, best_cuts, input_train, input_val, input_test, labels_train, labels_val, labels_test, sample_weights_train, sample_weights_val, sample_weights_test, eventweights_train, eventweights_val, eventweights_test, pred_train, pred_val, pred_test, signals=None, eventweight_signals=None, pred_signals=None, signal_identifiers=None, use_best_model=False):
 
-    print 'Now applying the cuts'
+    print('Now applying the cuts')
     do_sig = (pred_signals is not None) and (eventweight_signals is not None) and (signals is not None) and (signal_identifiers is not None)
     tag = dict_to_str(parameters)
     classtitles = get_classtitles(parameters)

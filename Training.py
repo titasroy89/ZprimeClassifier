@@ -11,7 +11,7 @@ from IPython.display import FileLink, FileLinks
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, BatchNormalization
 from keras.utils import to_categorical, plot_model
-from keras.callbacks import History, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
+from keras.callbacks import History, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
 from keras.optimizers import Adam
 from keras import metrics, regularizers
 import pickle
@@ -41,9 +41,9 @@ def TrainNetwork(parameters):
         train_new_model = False
     except:
         pass
-    if train_new_model: print 'Couldn\'t find the model "%s", a new one will be trained!' % (tag)
+    if train_new_model: print('Couldn\'t find the model "%s", a new one will be trained!' % (tag))
     else:
-        print 'Found the model "%s", not training a new one, go on to next function.' % (tag)
+        print('Found the model "%s", not training a new one, go on to next function.' % (tag))
         return
         # print 'Found model, but I will retrain it!'
     if not os.path.isdir('output/' + tag): os.makedirs('output/'+tag)
@@ -60,7 +60,7 @@ def TrainNetwork(parameters):
         kernel_regularizer=regularizers.l2(regrate)
 
 
-    print 'Number of input variables: %i' % (input_train.shape[1])
+    print('Number of input variables: %i' % (input_train.shape[1]))
     model.add(Dense(layers[0], activation='relu', input_shape=(input_train.shape[1],), kernel_regularizer=kernel_regularizer))
     if regmethod == 'dropout': model.add(Dropout(regrate))
     if batchnorm: model.add(BatchNormalization())
@@ -72,7 +72,7 @@ def TrainNetwork(parameters):
 
     model.add(Dense(labels_train.shape[1], activation='softmax', kernel_regularizer=kernel_regularizer))
     # model.add(Dense(labels_train.shape[1], activation='sigmoid', kernel_regularizer=kernel_regularizer))
-    print 'Number of output classes: %i' % (labels_train.shape[1])
+    print('Number of output classes: %i' % (labels_train.shape[1]))
 
 
 
@@ -81,7 +81,7 @@ def TrainNetwork(parameters):
     # mymetrics = [metrics.categorical_accuracy]
     mymetrics = [metrics.categorical_accuracy, metrics.mean_squared_error, metrics.categorical_crossentropy, metrics.kullback_leibler_divergence, metrics.cosine_proximity]
     model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=mymetrics)
-    print model.summary()
+    print(model.summary())
 
     period = epochs / 5
     checkpointer = ModelCheckpoint(filepath='output/'+tag+'/model_epoch{epoch:02d}.h5', verbose=1, save_best_only=False, period=period)
@@ -130,10 +130,10 @@ def TrainForMoreEpochs(parameters, nepochs):
     except:
         pass
     if new_model_already_exists:
-        print 'The new model would already exists'
+        print('The new model would already exists')
         return new_parameters
     else:
-        print 'Going to train for %i more epochs.' % nepochs
+        print('Going to train for %i more epochs.' % nepochs)
 
     if not os.path.isdir('output/' + new_tag): os.makedirs('output/'+new_tag)
 
@@ -169,13 +169,14 @@ def TrainForMoreEpochs(parameters, nepochs):
     mymetrics = [metrics.categorical_accuracy]
     # mymetrics = [metrics.categorical_accuracy, metrics.mean_squared_error, metrics.categorical_crossentropy, metrics.kullback_leibler_divergence]
     model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=mymetrics)
-    print model.summary()
+    print(model.summary())
 
     period = epochs / 5
     checkpointer = ModelCheckpoint(filepath='output/'+tag+'/model_epoch{epoch:02d}.h5', verbose=1, save_best_only=False, period=period)
     weights_train, weights_test = sample_weights_train, sample_weights_test
     if not eqweight:
         weights_train, weights_test = eventweights_train, eventweights_test
+        tensorboard = TensorBoard(log_dir='output/logs', histogram_freq=0, batch_size=512, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
     model.fit(input_train, labels_train, sample_weight=weights_train, batch_size=batch_size, epochs=nepochs, shuffle=True, validation_data=(input_test, labels_test, weights_test), callbacks=[checkpointer], verbose=1)
 
 
@@ -186,26 +187,26 @@ def TrainForMoreEpochs(parameters, nepochs):
 
 
     # Do the predictions
-    print 'Now that the model is trained, we\'re going to predict the labels of all 3 sets. '
-    print 'predicting for training set'
+    print('Now that the model is trained, we\'re going to predict the labels of all 3 sets. ')
+    print('predicting for training set')
     pred_train = model.predict(input_train)
     np.save('output/'+new_tag+'/prediction_train.npy'  , pred_train)
     for cl in range(len(parameters['classes'])):
-        print 'predicting for training set, class ' + str(cl)
+        print('predicting for training set, class ' + str(cl))
         tmp = pred_train[labels_train[:,cl] == 1]
         np.save('output/'+new_tag+'/prediction_train_class'+str(cl)+'.npy'  , tmp)
-    print 'predicting for test set'
+    print('predicting for test set')
     pred_test = model.predict(input_test)
     np.save('output/'+new_tag+'/prediction_test.npy'  , pred_test)
     for cl in range(len(parameters['classes'])):
-        print 'predicting for test set, class ' + str(cl)
+        print('predicting for test set, class ' + str(cl))
         tmp = pred_test[labels_test[:,cl] == 1]
         np.save('output/'+new_tag+'/prediction_test_class'+str(cl)+'.npy'  , tmp)
-    print 'predicting for val set'
+    print('predicting for val set')
     pred_val = model.predict(input_val)
     np.save('output/'+new_tag+'/prediction_val.npy'  , pred_val)
     for cl in range(len(parameters['classes'])):
-        print 'predicting for val set, class ' + str(cl)
+        print('predicting for val set, class ' + str(cl))
         tmp = pred_val[labels_val[:,cl] == 1]
         np.save('output/'+new_tag+'/prediction_val_class'+str(cl)+'.npy'  , tmp)
 
