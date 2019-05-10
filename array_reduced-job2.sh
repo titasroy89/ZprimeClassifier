@@ -3,7 +3,7 @@
 #SBATCH --nodes   1
 #SBATCH --constraint GPU
 #SBATCH --partition cms-uhh,cms,allgpu
-#SBATCH --array 1-42
+#SBATCH --array 1-5
 #SBATCH --job-name DNN-scan
 #SBATCH --workdir   /beegfs/desy/user/reimersa/ZprimeClassifier/workdir/output
 #SBATCH --output    steer-%N-%j.out
@@ -15,4 +15,4 @@
 
 source ~/.setenv
 cd /beegfs/desy/user/reimersa/ZprimeClassifier
-./steer_array2.py $SLURM_ARRAY_TASK_ID
+./steer_reduced_array2.py $SLURM_ARRAY_TASK_ID

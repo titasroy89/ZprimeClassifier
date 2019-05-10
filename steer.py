@@ -32,19 +32,17 @@ from ExportModel import *
 
 
 
-parameters = {'layers':[512, 512, 512],
-              'batchsize': 8192,
-              'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
-              # 'classes':{0: ['QCD_Mu'], 1: ['TTbar', 'DYJets', 'WJets', 'ST']},
-              # 'classes':{0: ['TTbar'], 1:['DYJets'], 2:['WJets'], 3:['ST']},
-              # 'classes':{0: ['TTbar'], 1:['ST']},
-              # 'classes':{0: ['TTbar'], 1: ['DYJets', 'WJets', 'ST']},
+parameters = {
+              'layers':[512, 512],
+              'batchsize': 131072,
+              # 'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
+              'classes':{0: ['QCD_Mu'], 1: ['TTbar', 'ST'], 2:['DYJets', 'WJets'], 3:['RSGluon_All']},
               'regmethod': 'dropout',
-              'regrate':0.40000,
-              'batchnorm': True,
-              'epochs':250,
-              'learningrate': 0.00100,
-              'runonfraction': 0.99,
+              'regrate':0.60000,
+              'batchnorm': False,
+              'epochs':700,
+              'learningrate': 0.00050,
+              'runonfraction': 1.00,
               'eqweight':False}
 
 parameters_onpredictions ={'layers':[20, 20],
@@ -71,13 +69,13 @@ classtag_onpredictions = get_classes_tag(parameters_onpredictions)
 
 # # First network
 # # =============
-# TrainNetwork(parameters)
+TrainNetwork(parameters)
 # PredictExternal(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='')
 # PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', use_best_model=False, usesignals=[2,4])
 PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', plotfolder='Plots/'+tag, use_best_model=True, usesignals=[2,4])
 # PlotInputs(parameters, inputfolder='output/'+tag+'/cut', filepostfix='_pass_best', plotfolder='Plots/'+tag+'/InputDistributions/pass')
 # PlotInputs(parameters, inputfolder='output/'+tag+'/cut', filepostfix='_fail_best', plotfolder='Plots/'+tag+'/InputDistributions/fail')
-# ExportModel(parameters, use_best_model=True)
+# ExportModel(parameters, inputfolder='input/', outputfolder='output/', use_best_model=True)
 # RankNetworks(outputfolder='output/')
 
 # # Network trained on outputs

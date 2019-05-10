@@ -474,10 +474,10 @@ def log_model_performance(parameters, model_history, outputfolder):
         diff_xlow = math.fabs(fitfunc(x_low, *pars_train) - fitfunc(x_low, *pars_val))
         diff_xhigh = math.fabs(fitfunc(x_high, *pars_train) - fitfunc(x_high, *pars_val))
         bestloss_val = fitfunc(x_low, *pars_val)
-        bestx = x_low - 1
+        bestx = x_low
         if diff_xhigh < diff_xlow:
             bestloss_val = fitfunc(x_high, *pars_val)
-            bestx = x_high - 1
+            bestx = x_high
         if root < 10:
             bestloss_val = 999999
             bestx = 999999
@@ -701,6 +701,7 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
 
 def plot_loss(parameters, plotfolder, model_history):
     print 'Starting to plot Loss'
+    eqweight = parameters['eqweight']
 
     # def fitfunc(x, a, b, c, d, e):
     #     return a + b/x + c*x + d*x*x + e/x/x
@@ -719,6 +720,8 @@ def plot_loss(parameters, plotfolder, model_history):
 
     plt.legend(loc='upper right')
     plt.ylim([0.1, 0.25])
+    if eqweight:
+        plt.ylim([0.01, 0.06])
     plt.ylabel('Loss')
     plt.xlabel('Number of training epochs')
     fig.savefig(plotfolder+'/Loss.pdf')

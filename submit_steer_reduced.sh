@@ -13,4 +13,4 @@
 source ~/.setenv
 echo $PYTHONPATH
 cd /beegfs/desy/user/reimersa/ZprimeClassifier
-./steer.py
+./steer_reduced.py

@@ -18,7 +18,7 @@ import pickle
 import os
 from functions import *
 
-def GetInputs(parameters):
+def GetInputsReduced(parameters):
 
     # Get parameters
     classes = parameters['classes']
@@ -27,20 +27,20 @@ def GetInputs(parameters):
     fraction = get_fraction(parameters)
     classtag = get_classes_tag(parameters)
 
-    if os.path.isdir('input/' + classtag):
-        if os.path.isfile('input/' + classtag + '/input_' + fraction + '_val.npy'):
+    if os.path.isdir('input_reduced/' + classtag):
+        if os.path.isfile('input_reduced/' + classtag + '/input_' + fraction + '_val.npy'):
             # print 'These inputfiles already exist, go on to next function.'
             # return
             pass
         else:
             pass
     else:
-        os.makedirs('input/' + classtag)
+        os.makedirs('input_reduced/' + classtag)
 
-    maxfiles_per_sample = {'TTbar': -1, 'WJets': -1, 'ST': -1, 'DYJets': -1, 'RSGluon': -1, 'RSGluon_All': -1, 'QCD_Mu': -1}
+    maxfiles_per_sample = {'TTbar': -1, 'WJets': -1, 'ST': -1, 'DYJets': -1, 'RSGluon': -1, 'QCD_Mu': -1}
 
     # Find initial file for each class
-    inputfiles = os.listdir('input/MLInput')
+    inputfiles = os.listdir('input_reduced/MLInput_Reduced')
 
     # list of numpy.array, containing the inputs for all classes. Will have len() = number of classes = len(classes)
     all_inputs = {}
@@ -68,12 +68,12 @@ def GetInputs(parameters):
             for j in range(len(lists_of_inputfiles[i])):
                 print 'At file no. %i out of %i.' % (j+1, len(lists_of_inputfiles[i]))
                 if first:
-                    thisinput = np.load('input/MLInput/' + lists_of_inputfiles[i][j])
-                    thiseventweight = np.load('input/MLInput/Weights_' + lists_of_inputfiles[i][j])
+                    thisinput = np.load('input_reduced/MLInput_Reduced/' + lists_of_inputfiles[i][j])
+                    thiseventweight = np.load('input_reduced/MLInput_Reduced/Weights_' + lists_of_inputfiles[i][j])
                     first = False
                 else:
-                    thisinput = np.concatenate((thisinput, np.load('input/MLInput/' + lists_of_inputfiles[i][j])))
-                    thiseventweight = np.concatenate((thiseventweight, np.load('input/MLInput/Weights_' + lists_of_inputfiles[i][j])))
+                    thisinput = np.concatenate((thisinput, np.load('input_reduced/MLInput_Reduced/' + lists_of_inputfiles[i][j])))
+                    thiseventweight = np.concatenate((thiseventweight, np.load('input_reduced/MLInput_Reduced/Weights_' + lists_of_inputfiles[i][j])))
         # thisinput = thisinput.astype(np.float32)
         # thiseventweight = thiseventweight.astype(np.float32)
         all_inputs[cl] = thisinput
@@ -111,12 +111,12 @@ def GetInputs(parameters):
         for j in range(len(lists_of_inputfiles_sig[i])):
             print 'At file no. %i out of %i.' % (j+1, len(lists_of_inputfiles_sig[i]))
             if first:
-                thisinput = np.load('input/MLInput/' + lists_of_inputfiles_sig[i][j])
-                thiseventweight = np.load('input/MLInput/Weights_' + lists_of_inputfiles_sig[i][j])
+                thisinput = np.load('input_reduced/MLInput_Reduced/' + lists_of_inputfiles_sig[i][j])
+                thiseventweight = np.load('input_reduced/MLInput_Reduced/Weights_' + lists_of_inputfiles_sig[i][j])
                 first = False
             else:
-                thisinput = np.concatenate((thisinput, np.load('input/MLInput/' + lists_of_inputfiles_sig[i][j])))
-                thiseventweight = np.concatenate((thiseventweight, np.load('input/MLInput/Weights_' + lists_of_inputfiles_sig[i][j])))
+                thisinput = np.concatenate((thisinput, np.load('input_reduced/MLInput_Reduced/' + lists_of_inputfiles_sig[i][j])))
+                thiseventweight = np.concatenate((thiseventweight, np.load('input_reduced/MLInput_Reduced/Weights_' + lists_of_inputfiles_sig[i][j])))
         # thisinput = thisinput.astype(np.float32)
         # thiseventweight = thiseventweight.astype(np.float32)
         all_signals[i] = thisinput
@@ -149,7 +149,7 @@ def GetInputs(parameters):
     # signal_total[signal_total == -inf]   = -999999.
     # signal_total[np.isnan(signal_total)] = 0.
 
-    # print input_total[labels_total[:,2]==1][0]
+    print input_total[labels_total[:,2]==1][0]
 
     shuffle = np.random.permutation(np.size(input_total, axis=0))
     input_total       = input_total[shuffle]
@@ -168,6 +168,7 @@ def GetInputs(parameters):
     frac_test  = 0.167 * percentage
     frac_val   = 0.167 * percentage
     sumweights = np.sum(eventweight_total, axis=0)
+    print 'frac_train/test/val -- train+test, train+test+val: ', frac_train, frac_test, frac_val, frac_train + frac_test, frac_train + frac_test + frac_val
     print 'shape of all inputs: ', input_total.shape
     print 'shape and sum of event weights: ', eventweight_total.shape, sumweights
     cutoffweighted_train = float(sumweights)*float(frac_train)
@@ -197,7 +198,6 @@ def GetInputs(parameters):
         thisclass = label_concatenated[i]
         sumweights_classes[thisclass] += eventweight_total[i,0]
 
-    print 'takeupto_(train/test/val): ' , takeupto_train, takeupto_test, takeupto_val
     input_train = input_total[:takeupto_train]
     labels_train = labels_total[:takeupto_train]
     eventweight_train = eventweight_total[:takeupto_train]
@@ -277,11 +277,11 @@ def GetInputs(parameters):
 
     classtag = get_classes_tag(parameters)
 
-    with open('input/MLInput/variable_names.pkl', 'r') as f:
+    with open('input_reduced/MLInput_Reduced/variable_names.pkl', 'r') as f:
         variable_names = pickle.load(f)
 
     # Write out scaler info
-    with open('input/'+classtag+'/NormInfo.txt', 'w') as f:
+    with open('input_reduced/'+classtag+'/NormInfo.txt', 'w') as f:
         for i in range(scaler.mean_.shape[0]):
             var = variable_names[i]
             mean = scaler.mean_[i]
@@ -290,24 +290,24 @@ def GetInputs(parameters):
             f.write(line)
 
 
-    with open('input/'+classtag+'/variable_names.pkl', 'w') as f:
+    with open('input_reduced/'+classtag+'/variable_names.pkl', 'w') as f:
         pickle.dump(variable_names, f)
-    np.save('input/'+classtag+'/input_'+fraction+'_train.npy'  , input_train)
-    np.save('input/'+classtag+'/input_'+fraction+'_test.npy'   , input_test)
-    np.save('input/'+classtag+'/input_'+fraction+'_val.npy'    , input_val)
-    np.save('input/'+classtag+'/labels_'+fraction+'_train.npy' , labels_train)
-    np.save('input/'+classtag+'/labels_'+fraction+'_test.npy'  , labels_test)
-    np.save('input/'+classtag+'/labels_'+fraction+'_val.npy'   , labels_val)
+    np.save('input_reduced/'+classtag+'/input_'+fraction+'_train.npy'  , input_train)
+    np.save('input_reduced/'+classtag+'/input_'+fraction+'_test.npy'   , input_test)
+    np.save('input_reduced/'+classtag+'/input_'+fraction+'_val.npy'    , input_val)
+    np.save('input_reduced/'+classtag+'/labels_'+fraction+'_train.npy' , labels_train)
+    np.save('input_reduced/'+classtag+'/labels_'+fraction+'_test.npy'  , labels_test)
+    np.save('input_reduced/'+classtag+'/labels_'+fraction+'_val.npy'   , labels_val)
 
-    np.save('input/'+classtag+'/sample_weights_'+fraction+'_train.npy', sample_weights_train)
-    np.save('input/'+classtag+'/eventweights_'+fraction+'_train.npy', eventweight_train)
-    np.save('input/'+classtag+'/sample_weights_'+fraction+'_test.npy', sample_weights_test)
-    np.save('input/'+classtag+'/eventweights_'+fraction+'_test.npy', eventweight_test)
-    np.save('input/'+classtag+'/sample_weights_'+fraction+'_val.npy', sample_weights_val)
-    np.save('input/'+classtag+'/eventweights_'+fraction+'_val.npy', eventweight_val)
+    np.save('input_reduced/'+classtag+'/sample_weights_'+fraction+'_train.npy', sample_weights_train)
+    np.save('input_reduced/'+classtag+'/eventweights_'+fraction+'_train.npy', eventweight_train)
+    np.save('input_reduced/'+classtag+'/sample_weights_'+fraction+'_test.npy', sample_weights_test)
+    np.save('input_reduced/'+classtag+'/eventweights_'+fraction+'_test.npy', eventweight_test)
+    np.save('input_reduced/'+classtag+'/sample_weights_'+fraction+'_val.npy', sample_weights_val)
+    np.save('input_reduced/'+classtag+'/eventweights_'+fraction+'_val.npy', eventweight_val)
 
 
 
     for i in all_signals.keys():
-        np.save('input/'+classtag+'/'+signal_identifiers[i]+'.npy', all_signals[i])
-        np.save('input/'+classtag+'/'+signal_identifiers[i]+'_eventweight.npy', all_signal_eventweights[i])
+        np.save('input_reduced/'+classtag+'/'+signal_identifiers[i]+'.npy', all_signals[i])
+        np.save('input_reduced/'+classtag+'/'+signal_identifiers[i]+'_eventweight.npy', all_signal_eventweights[i])

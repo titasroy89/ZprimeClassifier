@@ -17,25 +17,23 @@ from keras.callbacks import History, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
 import math
 import pickle
-from Training import *
+from TrainingReduced import *
 from Plotting import *
-from GetInputs import *
+from GetInputsReduced import *
 from RankNetworks import *
 from PredictExternal import *
 from functions import *
-from TrainModelOnPredictions import *
-from TrainSecondNetwork import *
-from TrainThirdNetwork import *
+from ExportModel import *
 
 
 jobid = int(sys.argv[1]) # = 1,2,3,4,5,6...
 
 
 values_layers = [[512, 512]]
-values_batchsize = [65536, 131072, 262144]
-values_regrate = [0.3000, 0.4000, 0.5000, 0.6000, 0.7000, 0.8000, 0.9000]
+values_batchsize = [131072]
+values_regrate = [0.2500, 0.3000, 0.3500, 0.4000, 0.4500]
 values_epochs = [500]
-values_learningrate = [0.001, 0.0005]
+values_learningrate = [0.001]
 values_runonfraction = [1.00]
 values_eqweight = [False]
 
@@ -67,16 +65,8 @@ classtag = get_classes_tag(parameters)
 
 
 
-
-# GetInputs(parameters)
-# PlotInputs(parameters)
-
 # # First network
 # # =============
-# TrainNetwork(parameters)
+TrainNetworkReduced(parameters)
 # PredictExternal(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='')
-# # PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', use_best_model=False, usesignals=[2,4])
-PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', plotfolder='Plots/'+tag, use_best_model=True, usesignals=[2,4])
-# PlotInputs(parameters, inputfolder='output/'+tag+'/cut', filepostfix='_pass_best', plotfolder='Plots/'+tag+'/InputDistributions/pass')
-# PlotInputs(parameters, inputfolder='output/'+tag+'/cut', filepostfix='_fail_best', plotfolder='Plots/'+tag+'/InputDistributions/fail')
-# RankNetworks(outputfolder='output/')
+PlotPerformance(parameters, inputfolder='input_reduced/'+classtag, outputfolder='output_reduced/'+tag, filepostfix='', plotfolder='Plots_reduced/'+tag, use_best_model=True, usesignals=[2,4])

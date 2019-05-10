@@ -44,16 +44,16 @@ def WriteWeights(fout, weights):
         for w in weights:
             WriteArray(fout, w)
 
-def ExportModel(parameters, use_best_model=False):
+def ExportModel(parameters, inputfolder='input/', outputfolder='output/', use_best_model=False):
     tag = dict_to_str(parameters)
     classtag = get_classes_tag(parameters)
     postfix = ''
     if use_best_model: postfix += '_best'
-    model = keras.models.load_model('output/'+tag+'/model'+postfix+'.h5')
+    model = keras.models.load_model(outputfolder+tag+'/model'+postfix+'.h5')
     filename1 = 'mymodel'
     if use_best_model: filename1 += '_best'
     filename1 += '.txt'
-    with open('output/'+tag+'/'+filename1, 'w') as fout:
+    with open(outputfolder+tag+'/'+filename1, 'w') as fout:
         for ind, l in enumerate(model.get_config()['layers']):
             if l['class_name'] == "Dropout":
                 continue
@@ -103,7 +103,7 @@ def ExportModel(parameters, use_best_model=False):
     print classes_str
 
     # 3) variable names
-    with open('input/'+classtag+'/variable_names.pkl', 'r') as f:
+    with open(inputfolder+classtag+'/variable_names.pkl', 'r') as f:
         variable_names = pickle.load(f)
     variables_str = '['
     for i in range(len(variable_names)):
@@ -112,7 +112,7 @@ def ExportModel(parameters, use_best_model=False):
             variables_str += ', '
     variables_str += ']'
 
-    with open('output/'+tag+'/'+filename2, 'w') as fout:
+    with open(outputfolder+tag+'/'+filename2, 'w') as fout:
         fout.write('layers %s\n' % (layers_str))
         fout.write('classes %s\n' % (classes_str))
         fout.write('variables %s\n' % (variables_str))
