@@ -31,6 +31,7 @@ import pickle
 import sys
 import os
 
+
 def dict_to_str(parameters):
     layers_str = [str(parameters['layers'][i]) for i in range(len(parameters['layers']))]
     tag = 'layers_'
@@ -54,6 +55,9 @@ def dict_to_str(parameters):
     tag = tag + '__learningrate_' + '{num:06d}'.format(num=int(parameters['learningrate']*100000.))
     tag = tag + '__runonfraction_' + '{num:03d}'.format(num=int(parameters['runonfraction']*100.))
     tag = tag + '__eqweight_' + str(parameters['eqweight'])
+    tag = tag + '__preprocess_' + str(parameters['preprocess'])
+    tag = tag + '__priorSigma_' + '{num:03d}'.format(num=int(parameters['sigma']*100.))
+
     if len(tag.split('__')) != len(parameters): raise ValueError('in dict_to_str: Number of parameters given in the dictionary does no longer match the prescription how to build the tag out of it.')
     return tag
 
@@ -97,26 +101,26 @@ def load_data(parameters, inputfolder, filepostfix):
     fraction = get_fraction(parameters)
 
 
-    input_train = np.load(inputfolder+'/input_'+fraction+'_train'+filepostfix+'.npy')
-    input_test = np.load(inputfolder+'/input_'+fraction+'_test'+filepostfix+'.npy')
-    input_val = np.load(inputfolder+'/input_'+fraction+'_val'+filepostfix+'.npy')
+    input_train = np.load(inputfolder+'/input_'+fraction+'_train'+filepostfix+'.npy').astype(np.float32)
+    input_test = np.load(inputfolder+'/input_'+fraction+'_test'+filepostfix+'.npy').astype(np.float32)
+    input_val = np.load(inputfolder+'/input_'+fraction+'_val'+filepostfix+'.npy').astype(np.float32)
     labels_train = np.load(inputfolder+'/labels_'+fraction+'_train'+filepostfix+'.npy')
     labels_test = np.load(inputfolder+'/labels_'+fraction+'_test'+filepostfix+'.npy')
     labels_val = np.load(inputfolder+'/labels_'+fraction+'_val'+filepostfix+'.npy')
-    sample_weights_train = np.load(inputfolder+'/sample_weights_'+fraction+'_train'+filepostfix+'.npy')
-    eventweights_train = np.load(inputfolder+'/eventweights_'+fraction+'_train'+filepostfix+'.npy')
-    sample_weights_test = np.load(inputfolder+'/sample_weights_'+fraction+'_test'+filepostfix+'.npy')
-    eventweights_test = np.load(inputfolder+'/eventweights_'+fraction+'_test'+filepostfix+'.npy')
-    sample_weights_val = np.load(inputfolder+'/sample_weights_'+fraction+'_val'+filepostfix+'.npy')
-    eventweights_val = np.load(inputfolder+'/eventweights_'+fraction+'_val'+filepostfix+'.npy')
+    sample_weights_train = np.load(inputfolder+'/sample_weights_'+fraction+'_train'+filepostfix+'.npy').astype(np.float32)
+    eventweights_train = np.load(inputfolder+'/eventweights_'+fraction+'_train'+filepostfix+'.npy').astype(np.float32)
+    sample_weights_test = np.load(inputfolder+'/sample_weights_'+fraction+'_test'+filepostfix+'.npy').astype(np.float32)
+    eventweights_test = np.load(inputfolder+'/eventweights_'+fraction+'_test'+filepostfix+'.npy').astype(np.float32)
+    sample_weights_val = np.load(inputfolder+'/sample_weights_'+fraction+'_val'+filepostfix+'.npy').astype(np.float32)
+    eventweights_val = np.load(inputfolder+'/eventweights_'+fraction+'_val'+filepostfix+'.npy').astype(np.float32)
 
     signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
     signals = {}
     signal_eventweights = {}
     signal_normweights = {}
     for i in range(len(signal_identifiers)):
-        signals[i] = np.load(inputfolder+'/' + signal_identifiers[i] + filepostfix+'.npy')
-        signal_eventweights[i] = np.load(inputfolder+'/' + signal_identifiers[i] + '_eventweight'+filepostfix+'.npy')
+        signals[i] = np.load(inputfolder+'/' + signal_identifiers[i] + filepostfix+'.npy').astype(np.float32)
+        signal_eventweights[i] = np.load(inputfolder+'/' + signal_identifiers[i] + '_eventweight'+filepostfix+'.npy').astype(np.float32)
         sum_signal_eventweights = signal_eventweights[i].sum()
         signal_normweights[i] = np.array([1./sum_signal_eventweights for j in range(signal_eventweights[i].shape[0])])
     return input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights
@@ -129,11 +133,11 @@ def load_predictions(outputfolder, filepostfix):
 
     # Load model prediction
     pred_signals = {}
-    pred_train = np.load(outputfolder+'/prediction_train'+filepostfix+'.npy')
-    pred_val = np.load(outputfolder+'/prediction_val'+filepostfix+'.npy')
-    pred_test = np.load(outputfolder+'/prediction_test'+filepostfix+'.npy')
+    pred_train = np.load(outputfolder+'/prediction_train'+filepostfix+'.npy').astype(np.float32)
+    pred_val = np.load(outputfolder+'/prediction_val'+filepostfix+'.npy').astype(np.float32)
+    pred_test = np.load(outputfolder+'/prediction_test'+filepostfix+'.npy').astype(np.float32)
     for i in range(len(signal_identifiers)):
-        pred_signals[i] = np.load(outputfolder+'/prediction_'+signal_identifiers[i]+''+filepostfix+'.npy')
+        pred_signals[i] = np.load(outputfolder+'/prediction_'+signal_identifiers[i]+''+filepostfix+'.npy').astype(np.float32)
 
     return pred_train, pred_test, pred_val, pred_signals
 
@@ -230,8 +234,11 @@ def roc_curve_own(y_true, y_score, pos_label=None, sample_weight=None, drop_inte
         tpr = tps / tps[-1]
 
     # purity!
-    prt = tps/(tps+fps)
-
+   # prt = 0
+    #if((tps+fps).all()>0):
+#    prt = tps/(tps+fps)
+    prt = np.ones(tps.shape)
+    np.divide(tps,tps+fps, out=prt, where=(tps+fps)!=0)
     return fpr, tpr, thresholds, prt
 
 
@@ -333,6 +340,41 @@ def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, 
         lumiweights_tests[cl] = lumiweights_tests_thistrueclass
 
     return pred_trains, weights_trains, normweights_trains, lumiweights_trains, pred_vals, weights_vals, normweights_vals, lumiweights_vals, pred_tests, weights_tests, normweights_tests, lumiweights_tests
+
+
+#create dictinaries for data (train, test or val) sample
+def get_data_dictionaries_onesample(parameters, eventweights, sample_weights, pred, labels):
+    classes = parameters['classes']
+    eqweight = parameters['eqweight']
+    pred_d = {}
+    weights_d = {}   
+    normweights_d = {}
+    lumiweights_d = {}
+   
+
+    for cl in classes.keys():
+        pred_thistrueclass = {}
+        weights_thistrueclass = {}
+        normweights_thistrueclass = {}
+        lumiweights_thistrueclass = {}
+        for node in classes.keys():
+            if not eqweight:
+                weights_thistrueclass[node] = eventweights[labels[:,cl] == 1]
+            else:
+                weights_thistrueclass[node] = sample_weights[labels[:,cl] == 1]
+
+            pred_thistrueclass[node] = pred[:,node][labels[:,cl] == 1]
+            lumiweights_thistrueclass[node] = eventweights[labels[:,cl] == 1]
+            sum_train = weights_thistrueclass[node].sum()
+            normweights_thistrueclass[node] = np.array([1./sum_train for j in range(weights_thistrueclass[node].shape[0])])
+
+        pred_d[cl] = pred_thistrueclass
+        weights_d[cl] = weights_thistrueclass
+        normweights_d[cl] = normweights_thistrueclass
+        lumiweights_d[cl] = lumiweights_thistrueclass
+
+   # print("pred_d.shape",pred_d.shape)
+    return pred_d, weights_d, normweights_d, lumiweights_d
 
 
 def get_indices_wrong_predictions(labels, preds):
@@ -448,7 +490,10 @@ def plot_confusion_matrix(cm, classes,
 def log_model_performance(parameters, model_history, outputfolder):
     loss_train = model_history['loss']
     loss_val = model_history['val_loss']
+#    print "loss_train[500] = ",loss_train[500]
+#    print "loss_val[500] = ",loss_val[500]
 
+    #print(model_history)
     #Fit Losses
     x, fitx, fitfunc, pars_train = fit_loss(model_history['loss'])
     x, fitx, fitfunc, pars_val = fit_loss(model_history['val_loss'])
@@ -463,7 +508,7 @@ def log_model_performance(parameters, model_history, outputfolder):
     #Find intersection between losses - aka roots of (f_train - f_val)
     # sol = opt.root_scalar(func_diff, (pars))
     roots = fsolve(func_diff, [100.], (fitfunc, pars))
-    print roots
+    #print roots
 
     # Get closest integer numbers
     for root in roots:
@@ -490,7 +535,7 @@ def log_model_performance(parameters, model_history, outputfolder):
     with open(outputfolder+'/ModelPerformance.txt', 'w') as f:
         f.write('\n\n====================\n')
         f.write('Tag: %s\n\n' % (tag))
-        f.write('Minimum validation loss reached after %i epochs\n' % (loss_val.index(min(loss_val))))
+        #f.write('Minimum validation loss reached after %i epochs\n' % (loss_val.index(min(loss_val))))
         f.write('Validation loss in point of closest approach: %2.3f, reached after %i epochs\n' % (bestloss_val, bestx))
         f.write('Performance: training loss (min, final) -- validation loss (min, final) -- training acc (min, final) -- validation acc (min, final)\n')
         f.write('                         ({0:2.3f}, {1:2.3f}) --               ({2:2.3f}, {3:2.3f}) --            ({4:1.3f}, {5:1.3f}) --              ({6:1.3f}, {7:1.3f})\n'.format(min(loss_train), loss_train[len(loss_train)-1], min(loss_val), loss_val[len(loss_val)-1], min(acc_train), acc_train[len(acc_train)-1], min(acc_val), acc_val[len(acc_val)-1]))
@@ -506,9 +551,12 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
     print 'plotting ROC curves'
     # Inclusive backgrounds
     # equallyweighted
+    print("HEY, in <plot_rocs> pred_val: ",pred_val[0:2,:])
+    print("HEY, in <plot_rocs> labels_val: ",labels_val[0:2,:])
     FalsePositiveRates, TruePositiveRates, Thresholds, aucs, SignalPuritys = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_val, labels_val=labels_val, weights_val=sample_weights_val)
     # print 'eqweight: ', sample_weights_val[10:15]
-    # print 'fpr: ', FalsePositiveRates[1][10:15]
+    print 'fpr: ', FalsePositiveRates[1][10:15]
+    print 'tpr: ', TruePositiveRates[1][10:15]
 
 
     plt.clf()
@@ -634,6 +682,7 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
             plt.semilogy(tprs_eq[i][0], fprs_eq[i][0], label='Bkg: ' + classtitles[i] + ', AUC: '+str(round(aucss_eq[i][0],3)), color=colorstr[i])
         plt.legend(loc='upper left')
         plt.ylim([0.0001, 1.05])
+#        plt.ylim([1e-9, 1.05])
         plt.xlabel(classtitles[cl]+' selection efficiency')
         plt.ylabel('Class background efficiency')
         title = 'ROC_val_class'+str(cl)+'_eqweight'
@@ -672,6 +721,7 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
                 plt.semilogy(tprs_lum[0 if cl > 0 else 1][0][indices], eff_signals_lum[usesignals[sigidx]], label='Signal (%s), AUC: %s' % (signalmasses[usesignals[sigidx]], str(round(auc_signals_lum[usesignals[sigidx]],3))), color='k', linestyle=signal_linestyles[sigidx])
         plt.legend(loc='upper left')
         plt.ylim([0.0001, 1.05])
+#        plt.ylim([1e-9, 1.05])
         plt.xlabel(classtitles[cl]+' selection efficiency')
         plt.ylabel('Class background efficiency')
         title = 'ROC_val_class'+str(cl)+'_lumiweighted'
@@ -715,13 +765,16 @@ def plot_loss(parameters, plotfolder, model_history):
 
     plt.plot(x, model_history['loss'], label = 'Training set')
     plt.plot(x, model_history['val_loss'], label = 'Validation set')
-    plt.plot(fitx, fitfunc(fitx, *postfitpars_train), label="Fit (training set)")
-    plt.plot(fitx, fitfunc(fitx, *postfitpars_val), label="Fit (validation set)")
+    #plt.plot(fitx, fitfunc(fitx, *postfitpars_train), label="Fit (training set)") #FixME for BNN
+    #plt.plot(fitx, fitfunc(fitx, *postfitpars_val), label="Fit (validation set)") #FixME for BNN
 
     plt.legend(loc='upper right')
-    plt.ylim([0.1, 0.25])
+    #plt.ylim([0.1, 0.25])
+    plt.ylim([0.01,100])
+    plt.yscale("log")
     if eqweight:
-        plt.ylim([0.01, 0.06])
+#        plt.ylim([0.01, 0.06])
+        plt.ylim([0.1,100])
     plt.ylabel('Loss')
     plt.xlabel('Number of training epochs')
     fig.savefig(plotfolder+'/Loss.pdf')
@@ -730,15 +783,19 @@ def plot_loss(parameters, plotfolder, model_history):
 def fit_loss(losslist, maxfev=50000):
 
     def fitfunc(x, a, b, c, d, e):
-        return a + b/x + c*x + d*x*x + e/x/x
-
+        return a + b/x + c*x + d*x*x + e/x/x + d*x*x*x
+    print("len(losslist)",len(losslist))
     x = range(len(losslist)+1)
     x = x[1:]
     x = np.array(x)
-    fitx = x[9:]
-    fity = losslist[9:]
+    #fitx = x[9:]
+    #fity = losslist[9:]
+    fitx = x[2:]
+    fity = losslist[2:]
 
-    postfitpars, cov = opt.curve_fit(fitfunc, fitx, fity, maxfev=maxfev)
+    postfitpars, cov = opt.curve_fit(fitfunc, fitx, fity, maxfev=maxfev,method='dogbox')
+    print "postfitpars: ",postfitpars
+#    postfitpars, cov = opt.curve_fit(fitfunc, fitx, fity) #TEST
 
     return x, fitx, fitfunc, postfitpars
 
@@ -989,10 +1046,13 @@ def plot_outputs_1d_nodes(parameters, plotfolder, pred_trains, labels_train, wei
             y_vals[i], dummy = np.histogram(pred_vals[i][cl], bins=nbins, weights=lumiweights_vals[i][cl])
             y_vals_norm[i], bin_edges_vals[i] = np.histogram(pred_vals[i][cl], bins=nbins, weights=weights_vals[i][cl])
             bin_centers[i] = 0.5*(bin_edges_trains[i][1:] + bin_edges_trains[i][:-1])
+            #print "y_vals_norm[i]",y_vals_norm[i]
             yerrs_norm[i] = y_vals_norm[i]**0.5
             yerrs[i] = y_vals[i]**0.5
             y_vals_norm[i] = y_vals_norm[i] * normweights_vals[i][cl][0]
             yerrs_norm[i] = yerrs_norm[i] * normweights_vals[i][cl][0]
+#            print("yerrs_norm[i].shape",yerrs[i].shape)
+#            print "yerrs_norm[i]",yerrs_norm[i]
 
         if do_sig:
             for key in pred_signals.keys():
@@ -1012,6 +1072,7 @@ def plot_outputs_1d_nodes(parameters, plotfolder, pred_trains, labels_train, wei
                 plt.hist(pred_signals[usesignals[sigidx]][:,cl], weights=eventweight_signals[usesignals[sigidx]]*normweight_signals[usesignals[sigidx]], bins=nbins, histtype='step', label='Signal (%s)' % signalmasses[usesignals[sigidx]], color='k', linestyle=signal_linestyles[sigidx])
         plt.legend(loc='best', prop={'size': 8})
         plt.yscale('log')
+        plt.xlim([-0.05, 1.05])
         plt.xlabel('Classifier output for node '+classtitle_to_use)
         plt.ylabel('Normalized number of events / bin')
         title = 'Distribution_node'+str(cl)+'_norm'
@@ -1034,12 +1095,122 @@ def plot_outputs_1d_nodes(parameters, plotfolder, pred_trains, labels_train, wei
 
         plt.legend(loc='best', prop={'size': 8})
         plt.yscale('log')
+        plt.xlim([-0.05, 1.05])
         plt.xlabel('Classifier output for node '+classtitle_to_use)
         plt.ylabel('Number of events / bin (weighted by luminosity)')
         title = 'Distribution_node'+str(cl)
         if use_best_model: title += '_best'
         title += '.pdf'
         fig.savefig(plotfolder+'/'+title)
+        plt.close()
+
+def plot_outputs_1d_nodes_std(parameters, plotfolder, pred_trains,pred_trains_std, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, pred_vals_std, labels_val, weights_vals, lumiweights_vals, normweights_vals, pred_signals=None, pred_signals_std=None, eventweight_signals=None, normweight_signals=None, usesignals=[0], use_best_model=False):
+
+    print 'Starting to plot the classifier output distribution with std'
+    tag = dict_to_str(parameters)
+    classtitles = get_classtitles(parameters)
+    do_sig = (pred_signals is not None) and (eventweight_signals is not None) and (normweight_signals is not None)
+
+    for cl in range(labels_train.shape[1]):
+        # 'cl' is the output node number
+        nbins = 100
+        binwidth = 1./float(nbins)
+        y_trains = {}
+        y_vals = {}
+        y_trains_norm = {}
+        y_vals_norm = {}
+        bin_edges_trains = {}
+        bin_edges_vals = {}
+        bin_centers = {}
+        yerrs = {}
+        yerrs_norm = {}
+        y_signals = {}
+        yerrs_signals = {}
+
+
+
+        for i in range(labels_train.shape[1]):
+            # 'i' is the true class (always the first index)
+            print("pred_trains[i][0].shape",pred_trains[i][cl].shape)
+            print("pred_vals_std[i][0].shape",pred_vals_std[i][cl].shape)
+            print("pred_trains[i][0]:",pred_trains[i][0])
+            print("pred_vals_std[i][0]:",pred_vals_std[i][0])
+            print "lumiweights_trains[i][0]: ",lumiweights_trains[i][0]
+            y_trains[i], dummy = np.histogram(pred_trains[i][cl], bins=nbins, weights=lumiweights_trains[i][cl])
+            y_trains_norm[i], bin_edges_trains[i] = np.histogram(pred_trains[i][cl], bins=nbins, weights=weights_trains[i][cl])
+            y_vals[i], dummy = np.histogram(pred_vals[i][cl], bins=nbins, weights=lumiweights_vals[i][cl])
+            y_vals_norm[i], bin_edges_vals[i] = np.histogram(pred_vals[i][cl], bins=nbins, weights=weights_vals[i][cl])
+
+            yerrs[i], dummy = np.histogram(pred_vals_std[i][cl], bins=nbins, weights=lumiweights_vals[i][cl])
+            yerrs_norm[i], dummy = np.histogram(pred_vals_std[i][cl], bins=nbins, weights=weights_vals[i][cl])
+
+            bin_centers[i] = 0.5*(bin_edges_trains[i][1:] + bin_edges_trains[i][:-1])
+            y_vals_norm[i] = y_vals_norm[i] * normweights_vals[i][cl][0]
+            yerrs_norm[i] = yerrs_norm[i] * normweights_vals[i][cl][0]
+
+#            y_vals[i] = y_vals[i].reshape(len(y_vals[i]),1)
+#            pred_vals_std[i][cl] +=1e-6
+#            yerrs[i] = pred_vals_std[i][cl].reshape(len(pred_vals_std[i][cl]),1)
+#            yerrs_norm[i] =  pred_vals_std[i][cl].reshape(len(pred_vals_std[i][cl]),1)
+#            yerrs_norm[i] = yerrs_norm[i] * normweights_vals[i][cl][0]
+
+#            print("pred_vals_std[i][cl].shape",pred_vals_std[i][cl].shape)
+#            print("yerrs_norm[i].shape",yerrs[i].shape)
+#            print "yerrs_norm[i]",yerrs_norm[i]
+
+        if do_sig:
+            for key in pred_signals.keys():
+                y_signals[key], dummy = np.histogram(pred_signals[key][:,cl], bins=nbins, weights=eventweight_signals[key])
+                #yerrs_signals[key] = y_signals[key]**0.5
+                yerrs_signals[key], dummy =np.histogram(pred_signals_std[key][:,cl], bins=nbins, weights=eventweight_signals[key])
+
+        plt.clf()
+        fig = plt.figure()
+        classtitle_to_use = ''
+        for i in range(labels_train.shape[1]):
+            #print("labels_train:",labels_train[i])
+            plt.hist(pred_trains[i][cl], weights=weights_trains[i][cl]*normweights_trains[i][cl], bins=nbins, histtype='step', label='Training sample, ' + classtitles[i], color=colorstr[i])
+            plt.errorbar(bin_centers[i], y_vals_norm[i], yerr=yerrs_norm[i], fmt = '.', drawstyle = 'steps-mid', linestyle=' ', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            if i == cl:
+                classtitle_to_use = classtitles[i]
+        if do_sig:
+            for sigidx in range(len(usesignals)):
+                plt.hist(pred_signals[usesignals[sigidx]][:,cl], weights=eventweight_signals[usesignals[sigidx]]*normweight_signals[usesignals[sigidx]], bins=nbins, histtype='step', label='Signal (%s)' % signalmasses[usesignals[sigidx]], color='k', linestyle=signal_linestyles[sigidx])
+
+
+        plt.legend(loc='best', prop={'size': 8})
+        plt.yscale('log')
+        plt.xlim([-0.05, 1.05])
+        plt.xlabel('Classifier output for node '+classtitle_to_use)
+        plt.ylabel('Normalized number of events / bin')
+        title = 'Distribution_node'+str(cl)+'_norm'
+        if use_best_model: title += '_best'
+        title += '.pdf'
+        fig.savefig(plotfolder+'/'+title)
+
+        plt.clf()
+        fig = plt.figure()
+        classtitle_to_use = ''
+        for i in range(labels_train.shape[1]):
+            plt.errorbar(bin_centers[i], y_vals[i], yerr=yerrs[i], fmt = '.', drawstyle = 'steps-mid', linestyle=' ', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            # print i, y_vals[i]
+            if i == cl:
+                classtitle_to_use = classtitles[i]
+        if do_sig:
+            for sigidx in range(len(usesignals)):
+                plt.hist(pred_signals[usesignals[sigidx]][:,cl], weights=eventweight_signals[usesignals[sigidx]], bins=nbins, histtype='step', label='Signal (%s)' % signalmasses[usesignals[sigidx]], color='k', linestyle=signal_linestyles[sigidx])
+                # plt.errorbar(bin_centers[i], y_signals[usesignal], yerr=yerrs_signals[usesignal], fmt = '.', drawstyle = 'steps-mid', linestyle=' ', label='Signal sample', color='k')
+
+        plt.legend(loc='best', prop={'size': 8})
+        plt.yscale('log')
+        plt.xlim([-0.05, 1.05])
+        plt.xlabel('Classifier output for node '+classtitle_to_use)
+        plt.ylabel('Number of events / bin (weighted by luminosity)')
+        title = 'Distribution_node'+str(cl)
+        if use_best_model: title += '_best'
+        title += '_std.pdf'
+        fig.savefig(plotfolder+'/'+title)
+        print("Store file: ",plotfolder+'/'+title)
         plt.close()
 
 def plot_outputs_1d_classes(parameters, plotfolder, pred_trains, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, labels_val, weights_vals, lumiweights_vals, normweights_vals, use_best_model=False):
@@ -1091,6 +1262,7 @@ def plot_outputs_1d_classes(parameters, plotfolder, pred_trains, labels_train, w
 
         plt.legend(loc='best', prop={'size': 8})
         plt.yscale('log')
+        plt.xlim([-0.05, 1.05])
         plt.xlabel('Classifier output for true class '+classtitle_to_use)
         plt.ylabel('Normalized number of events / bin')
         title = 'Distribution_class'+str(cl)+'_norm'
@@ -1108,6 +1280,7 @@ def plot_outputs_1d_classes(parameters, plotfolder, pred_trains, labels_train, w
 
         plt.legend(loc='best', prop={'size': 8})
         plt.yscale('log')
+        plt.xlim([-0.05, 1.05])
         plt.xlabel('Classifier output for true class '+classtitle_to_use)
         plt.ylabel('Number of events / bin (weighted by luminosity)')
         title = 'Distribution_class'+str(cl)+''
@@ -1523,3 +1696,136 @@ def apply_cuts(parameters, outputfolder, best_cuts, input_train, input_val, inpu
         for key in pred_signals.keys():
             np.save(outputfolder+'/cut/'+signal_identifiers[key]+'_fail'+ending                , signals_fail[key])
             np.save(outputfolder+'/cut/'+signal_identifiers[key]+'_eventweight_fail'+ending    , eventweight_signals_fail[key])
+
+
+class lr_reduce_on_plateau:
+    """Class for reducing lr when given validation loss is not improving
+    any longer.
+
+    Args:
+        lr:       inital learning rate (float)
+        patience: number of times loss doesn't improve
+            until reduce on plateau is triggered
+        fraction: determines lr update after triggering reduce on plateau
+            lr = lr*fraction (should be float between 0 and 1)
+        delte_improv: loss value has to be smaller than best loss value
+            minus delta_improv to count as an improvment
+
+    Example for usage:
+        lr = lr_reduce_on_plateau(
+            lr=0.1, patience=3, fraction=0.1)
+        for i in n_epochs:
+            ...
+            sess.run(train_op, feed_dict={lr: lr.lr})
+            lr.update_on_plateau(val_loss)
+    """
+
+    def __init__(self, lr, patience, delta_improv, fraction):
+        self.patience = patience
+        self.fraction = fraction
+        self.delta_improv = delta_improv
+        self.lr = lr # initial lr
+        self.best_loss = None
+        self.counter = 0
+
+    def _update(self, x):
+        if self.best_loss == None:
+            self.best_loss = x
+        elif (self.best_loss - x) > self.delta_improv:
+            self.counter = 0.
+        else:
+            self.counter +=1
+        if x < self.best_loss:
+            self.best_loss = x
+
+    def _lr_reduce(self):
+        self.lr = self.lr*self.fraction
+
+    def update_on_plateau(self, x):
+        self._update(x)
+        if self.counter >= self.patience:
+            self._lr_reduce()
+            self.counter = 0. # reset counter
+            print("Reduce on Plateau triggered! (patience: {:}, fraction: {:}, ".format(
+                self.patience, self.fraction) +\
+                "delta_improv: {:}, new lr: {:})".format(self.delta_improv, self.lr))
+
+
+
+class check_early_stopping:
+    """Class for Early Stopping. Early Stopping stopps training
+    after validation loss hasen't improved for patience-time.
+    Look into example for usgae (check mehtod just gives Boolen output).
+
+    Args:
+        patience: number of times loss doesn't improve
+            until Early Stopping is triggered
+        delte_improv: loss value has to be smaller than best loss value
+            minus delta_improv to count as an improvment
+
+    Example for usage:
+        check = check_early_stopping(
+            patience=3, fraction=0.1)
+        for i in n_epochs:
+            ...
+            sess.run(train_op)
+            if check.update_and_check(val_loss):
+                break
+    """
+
+    def __init__(self, patience, delta_improv=0.):
+        self.patience = patience
+        self.delta_improv = delta_improv
+        self.best_loss = None
+        self.counter = 0
+
+    def _update(self, x):
+        if self.best_loss == None:
+            self.best_loss = x
+        elif (self.best_loss - x) > self.delta_improv:
+            self.counter = 0.
+        else:
+            self.counter +=1
+        if x < self.best_loss:
+            self.best_loss = x
+
+    def update_and_check(self, x):
+        self._update(x)
+        if self.counter >= self.patience:
+            print("Early Stopping triggered! (patience: {:}, delta_improv: {:})".format(
+                self.patience, self.delta_improv))
+            return True
+        else:
+            return False
+
+
+def plot_prediction_samples(parameters, plotfolder, pred_train_all, labels_train, eventID):
+    if not os.path.isdir(plotfolder): os.makedirs(plotfolder)
+    
+    print 'Starting to plot prediction in all samples for 1 event and 1 class'
+    tag = dict_to_str(parameters)
+    classtitles = get_classtitles(parameters)
+#    y_trains[i], dummy = np.histogram(pred_trains_all[:,eventID,class_label], bins=nbins)
+
+    nbins = 25
+    binwidth = 1./float(nbins)
+
+    plt.clf()
+    fig = plt.figure()
+    true_lable = 'true lable: '
+    for i in range(labels_train.shape[1]):
+        plt.hist(pred_train_all[:,eventID,i], bins=nbins, histtype='step', label='Training sample, prediction for ' + classtitles[i]+' node', color=colorstr[i])
+        if(labels_train[eventID][i]>0):
+            true_lable = true_lable + classtitles[i]
+    plt.legend(loc='best', prop={'size': 8})
+    plt.yscale('log')
+    plt.xlim([-0.05, 1.05])
+#    plt.xlabel('Classifier output for class #'+str(class_label)+', event '+str(eventID))
+    plt.xlabel('Classifier output for event '+str(eventID)+', '+true_lable)
+    plt.ylabel('Number of events / bin')
+
+    #title = 'Distribution_event'+str(eventID)+'_class'+str(class_label)
+    title = 'Distribution_train_event'+str(eventID)
+    title += '.pdf'
+    fig.savefig(plotfolder+'/'+title)
+    plt.close()

@@ -27,15 +27,15 @@ def GetInputs(parameters):
     fraction = get_fraction(parameters)
     classtag = get_classes_tag(parameters)
 
-    if os.path.isdir('input/' + classtag):
-        if os.path.isfile('input/' + classtag + '/input_' + fraction + '_val.npy'):
+    if os.path.isdir('input/' +parameters['preprocess']+'/'+ classtag):
+        if os.path.isfile('input/' +parameters['preprocess']+'/'+ classtag + '/input_' + fraction + '_val.npy'):
             # print 'These inputfiles already exist, go on to next function.'
             # return
             pass
         else:
             pass
     else:
-        os.makedirs('input/' + classtag)
+        os.makedirs('input/' +parameters['preprocess']+'/'+ classtag)
 
     maxfiles_per_sample = {'TTbar': -1, 'WJets': -1, 'ST': -1, 'DYJets': -1, 'RSGluon': -1, 'RSGluon_All': -1, 'QCD_Mu': -1}
 
@@ -163,10 +163,11 @@ def GetInputs(parameters):
 
     # Cut off some events if not running on full sample
     # percentage = 0.01
-    percentage = runonfraction
+    percentage = runonfraction    
     frac_train = 0.666 * percentage
     frac_test  = 0.167 * percentage
     frac_val   = 0.167 * percentage
+    
     sumweights = np.sum(eventweight_total, axis=0)
     print 'shape of all inputs: ', input_total.shape
     print 'shape and sum of event weights: ', eventweight_total.shape, sumweights
@@ -264,50 +265,79 @@ def GetInputs(parameters):
     for i in all_signal_eventweights.keys():
         all_signal_eventweights[i] = np.asarray(all_signal_eventweights[i]).ravel()
 
+    classtag = get_classes_tag(parameters)
+    with open('input/MLInput/variable_names.pkl', 'r') as f:
+        variable_names = pickle.load(f)
+
+    #### TEST without scaling
     # Scale features
-    scaler = preprocessing.StandardScaler()
-    scaler.mean_ = np.mean(input_train, axis=0)
-    scaler.scale_ = np.std(input_train, axis=0)
+
+    #print "mean = ", np.mean(input_train, axis=0)[0]
+    #print "std = ", np.std(input_train, axis=0)[0]
+    
+    #print "scaler.mean_ =", scaler.mean_[0]
+    #print "scaler.scale_ = ",scaler.scale_[0]
+
+    # scaler = preprocessing.StandardScaler()
+    # scaler.mean_ = np.mean(input_train, axis=0)
+    # scaler.scale_ = np.std(input_train, axis=0)
+
+#    scaler = preprocessing.StandardScaler().fit(input_train)
+#    scaler = preprocessing.QuantileTransformer(output_distribution='normal').fit(input_train)
+    if(parameters['preprocess'] == 'StandardScaler'):
+        print " === StandardScaler preprocessing ==="
+        scaler = preprocessing.StandardScaler().fit(input_train)
+    elif(parameters['preprocess'] == 'QuantileTransformerUniform'):
+        print " === QuantileTransformer(Uniform) preprocessing ==="
+        scaler = preprocessing.QuantileTransformer(output_distribution='uniform').fit(input_train)
+    elif(parameters['preprocess'] == 'MinMaxScaler'):
+        print " === MinMaxScaler preprocessing ==="
+        scaler = preprocessing.MinMaxScaler().fit(input_train)
+    else:
+        print("preprocess set to unknown value! going to use standart StandardScaler preprocessing") 
+        scaler = preprocessing.StandardScaler().fit(input_train)
+
+#    scaler =  preprocessing.PowerTransformer(method='yeo-johnson').fit(input_train)
+#    scaler =  preprocessing.RobustScaler(quantile_range=(25, 75)).fit(input_train)
     input_train = deepcopy(scaler.transform(input_train))
     input_test = deepcopy(scaler.transform(input_test))
     input_val = deepcopy(scaler.transform(input_val))
     for i in all_signals.keys():
         all_signals[i] = deepcopy(scaler.transform(all_signals[i]))
 
-
-    classtag = get_classes_tag(parameters)
-
-    with open('input/MLInput/variable_names.pkl', 'r') as f:
-        variable_names = pickle.load(f)
-
     # Write out scaler info
     with open('input/'+classtag+'/NormInfo.txt', 'w') as f:
-        for i in range(scaler.mean_.shape[0]):
+        #for i in range(scaler.mean_.shape[0]):
+        for i in range(np.mean(input_train, axis=0).shape[0]): #valid only for StandardScaler, placeholder for the rest
             var = variable_names[i]
-            mean = scaler.mean_[i]
-            scale = scaler.scale_[i]
+            #mean = scaler.mean_[i]
+            #scale = scaler.scale_[i]
+            mean = np.mean(input_train, axis=0)[i] #valid only for StandardScaler, placeholder for the rest
+            scale = np.std(input_train, axis=0)[i] #valid only for StandardScaler, placeholder for the rest
             line = var + ' StandardScaler ' + str(mean) + ' ' + str(scale) + '\n'
             f.write(line)
+    ### END Scaling
 
-
-    with open('input/'+classtag+'/variable_names.pkl', 'w') as f:
+    with open('input/'+parameters['preprocess']+'/'+classtag+'/variable_names.pkl', 'w') as f:
         pickle.dump(variable_names, f)
-    np.save('input/'+classtag+'/input_'+fraction+'_train.npy'  , input_train)
-    np.save('input/'+classtag+'/input_'+fraction+'_test.npy'   , input_test)
-    np.save('input/'+classtag+'/input_'+fraction+'_val.npy'    , input_val)
-    np.save('input/'+classtag+'/labels_'+fraction+'_train.npy' , labels_train)
-    np.save('input/'+classtag+'/labels_'+fraction+'_test.npy'  , labels_test)
-    np.save('input/'+classtag+'/labels_'+fraction+'_val.npy'   , labels_val)
 
-    np.save('input/'+classtag+'/sample_weights_'+fraction+'_train.npy', sample_weights_train)
-    np.save('input/'+classtag+'/eventweights_'+fraction+'_train.npy', eventweight_train)
-    np.save('input/'+classtag+'/sample_weights_'+fraction+'_test.npy', sample_weights_test)
-    np.save('input/'+classtag+'/eventweights_'+fraction+'_test.npy', eventweight_test)
-    np.save('input/'+classtag+'/sample_weights_'+fraction+'_val.npy', sample_weights_val)
-    np.save('input/'+classtag+'/eventweights_'+fraction+'_val.npy', eventweight_val)
+    print "STORE: input_train[0] = ", input_train[0]
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/input_'+fraction+'_train.npy'  , input_train)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/input_'+fraction+'_test.npy'   , input_test)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/input_'+fraction+'_val.npy'    , input_val)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/labels_'+fraction+'_train.npy' , labels_train)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/labels_'+fraction+'_test.npy'  , labels_test)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/labels_'+fraction+'_val.npy'   , labels_val)
+
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/sample_weights_'+fraction+'_train.npy', sample_weights_train)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/eventweights_'+fraction+'_train.npy', eventweight_train)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/sample_weights_'+fraction+'_test.npy', sample_weights_test)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/eventweights_'+fraction+'_test.npy', eventweight_test)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/sample_weights_'+fraction+'_val.npy', sample_weights_val)
+    np.save('input/'+parameters['preprocess']+'/'+classtag+'/eventweights_'+fraction+'_val.npy', eventweight_val)
 
 
 
     for i in all_signals.keys():
-        np.save('input/'+classtag+'/'+signal_identifiers[i]+'.npy', all_signals[i])
-        np.save('input/'+classtag+'/'+signal_identifiers[i]+'_eventweight.npy', all_signal_eventweights[i])
+        np.save('input/'+parameters['preprocess']+'/'+classtag+'/'+signal_identifiers[i]+'.npy', all_signals[i])
+        np.save('input/'+parameters['preprocess']+'/'+classtag+'/'+signal_identifiers[i]+'_eventweight.npy', all_signal_eventweights[i])

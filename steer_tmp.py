@@ -28,49 +28,23 @@ from TrainSecondNetwork import *
 from TrainThirdNetwork import *
 from ExportModel import *
 
-# ignore weird Warnings: "These warnings are visible whenever you import scipy
-# (or another package) that was compiled against an older numpy than is installed."
-# https://stackoverflow.com/questions/40845304/runtimewarning-numpy-dtype-size-changed-may-indicate-binary-incompatibility
-import warnings
-warnings.filterwarnings("ignore", message="numpy.dtype size changed")
-warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 
 
 
 parameters = {
-#              'layers':[512, 512],
-              'layers':[128, 128],
-        #      'layers':[256, 256],
+              'layers':[512, 512],
               'batchsize': 131072,
-             #  'batchsize': 16384,
-           #   'batchsize': 2526814,
-              #'batchsize': 128,
               # 'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
-              #'classes':{0: ['QCD_Mu'], 1: ['TTbar', 'ST'], 2:['DYJets', 'WJets'], 3:['RSGluon_All']},
-              'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['WJets'], 3:['DYJets','ST']},
+              'classes':{0: ['QCD_Mu'], 1: ['TTbar', 'ST'], 2:['DYJets', 'WJets'], 3:['RSGluon_All']},
               'regmethod': 'dropout',
               'regrate':0.60000,
               'batchnorm': False,
-              'epochs':700,
-#              'epochs':15,
-#              'epochs':7000,
-              #'epochs':500,
-#               'epochs':200,
-#               'epochs':50,
-#              'epochs':2,
+              #'epochs':700,
+              'epochs':500,
               'learningrate': 0.00050,
-#              'learningrate': 0.050,
-              'runonfraction': 0.99,
-#              'runonfraction': 0.20,
-#               'runonfraction': 0.50,
-#              'runonfraction': 0.10,
-              'eqweight':False,
-#              'preprocess': 'StandardScaler',
-#              'preprocess': 'QuantileTransformerUniform',
-               'preprocess': 'MinMaxScaler',
-               'sigma': 0.5, #sigma for Gaussian prior (BNN only)
-}
+              'runonfraction': 1.00,
+              'eqweight':False}
 
 # ##TEST
 # parameters = {
@@ -96,12 +70,9 @@ parameters_onpredictions ={'layers':[20, 20],
                             'regrate':0.01000,
                             'batchnorm': True,
                             'epochs':499,
-                            'learningrate': 0.00150,
+                            'learningrate': 0.00100,
                             'runonfraction': parameters['runonfraction'],
-                            'eqweight':False,
-                            'preprocess': parameters['preprocess'],
-                            'sigma': 0.5, #sigma for Gaussian prior (BNN only)
-}
+                            'eqweight':False}
 
 tag = dict_to_str(parameters)
 classtag = get_classes_tag(parameters)
@@ -109,35 +80,26 @@ tag_onpredictions = dict_to_str(parameters_onpredictions)
 classtag_onpredictions = get_classes_tag(parameters_onpredictions)
 
 
-# # # # # # # Get all the inputs
-# # # # # # # # # ==================
+# # Get all the inputs
+# # ==================
 # GetInputs(parameters)
-# PlotInputs(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, filepostfix='', plotfolder='Plots/InputDistributions/' +parameters['preprocess']+'/' + classtag)
+# PlotInputs(parameters, inputfolder='input/'+classtag, filepostfix='', plotfolder='Plots/InputDistributions/' + classtag)
 
 
-# # # # # # # # # ### # # # #DNN
-# TrainNetwork(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+tag)
-# PredictExternal(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+tag, filepostfix='')
-# PlotPerformance(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+tag, filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/DNN_'+tag, use_best_model=True, usesignals=[2,4])
+## # # # #DNN
+TrainNetwork(parameters)
+PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', plotfolder='Plots/'+tag, use_best_model=True, usesignals=[2,4])
 
-
-# # # # # # #BNN
-TrainBayesianNetwork(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/BNN_'+tag)
-PredictExternalBayesianNetwork(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/BNN_'+tag, filepostfix='',nsamples=100)
-#Plot validation results and store model for usage in UHH2, etc
-PlotBayesianPerformance(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/BNN_'+tag, filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/BNN_'+tag, use_best_model=False, usesignals=[2,4])
-
-# # DNN debug
-#TrainDeepNetwork(parameters)
-#PredictExternalDeepNetwork(parameters, inputfolder='input/'+classtag, outputfolder='output/DNN_'+tag, filepostfix='')
-#PlotDeepPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/DNN_'+tag, filepostfix='', plotfolder='Plots/DNN_'+tag, use_best_model=False, usesignals=[2,4])
-
+# # #BNN
+#TrainBayesianNetwork(parameters)
+#PredictExternalBayesianNetwork(parameters, inputfolder='input/'+classtag, outputfolder='output/BNN_'+tag, filepostfix='')
+#PlotBayesianPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/BNN_'+tag, filepostfix='', plotfolder='Plots/BNN_'+tag, use_best_model=False, usesignals=[2,4])
 
 # #==================
 
 # # # First network
 # # # =============
-## TrainNetwork(parameters)
+# TrainNetwork(parameters)
 # PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', plotfolder='Plots/'+tag, use_best_model=True, usesignals=[2,4])
 # # PredictExternal(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='')
 # # PlotPerformance(parameters, inputfolder='input/'+classtag, outputfolder='output/'+tag, filepostfix='', use_best_model=False, usesignals=[2,4])
@@ -169,29 +131,29 @@ PlotBayesianPerformance(parameters, inputfolder='input/'+parameters['preprocess'
 
 
 
-# parameters2 ={'layers':[512, 512],
-#               'batchsize': 8192,
-#               'classes':parameters['classes'],
-#               'regmethod': 'dropout',
-#               'regrate':0.20000,
-#               'batchnorm': True,
-#               'epochs':500,
-#               'learningrate': 0.00100,
-#               'runonfraction': parameters['runonfraction'],
-#               'eqweight':False}
+parameters2 ={'layers':[512, 512],
+              'batchsize': 8192,
+              'classes':parameters['classes'],
+              'regmethod': 'dropout',
+              'regrate':0.20000,
+              'batchnorm': True,
+              'epochs':500,
+              'learningrate': 0.00100,
+              'runonfraction': parameters['runonfraction'],
+              'eqweight':False}
 
-# parameters3 ={'layers':[512, 512],
-#               'batchsize': 8192,
-#               'classes':parameters['classes'],
-#               'regmethod': 'dropout',
-#               'regrate':0.20000,
-#               'batchnorm': True,
-#               'epochs':500,
-#               'learningrate': 0.00100,
-#               'runonfraction': parameters['runonfraction'],
-#               'eqweight':False}
+parameters3 ={'layers':[512, 512],
+              'batchsize': 8192,
+              'classes':parameters['classes'],
+              'regmethod': 'dropout',
+              'regrate':0.20000,
+              'batchnorm': True,
+              'epochs':500,
+              'learningrate': 0.00100,
+              'runonfraction': parameters['runonfraction'],
+              'eqweight':False}
 
-# tag2 = dict_to_str(parameters2)
-# classtag2 = get_classes_tag(parameters2)
-# tag3= dict_to_str(parameters3)
-# classtag3 = get_classes_tag(parameters3)
+tag2 = dict_to_str(parameters2)
+classtag2 = get_classes_tag(parameters2)
+tag3= dict_to_str(parameters3)
+classtag3 = get_classes_tag(parameters3)
