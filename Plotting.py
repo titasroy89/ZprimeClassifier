@@ -29,6 +29,13 @@ from tensorflow_probability import distributions as tfd
 import h5py
 import pandas as pd
 
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=DeprecationWarning)
+warnings.simplefilter(action='ignore', category=RuntimeWarning)
+
 def _prior_normal_fn(sigma, dtype, shape, name, trainable, add_variable_fn):
     """Normal prior with mu=0 and sigma=sigma. Can be passed as an argument to                                                                                               
     the tpf.layers                                                                                                                                                           
@@ -145,29 +152,6 @@ def PlotBayesianPerformance(parameters, inputfolder, outputfolder, filepostfix, 
     dropout_hd = []
     inputs = tf.keras.layers.Input(shape=(input_train.shape[1],))
 
-    # #With dropout
-    # layer_hd.append(tfp.layers.DenseFlipout(layers[0], activation=tf.nn.relu, kernel_prior_fn=prior, kernel_posterior_tensor_fn=method)(inputs))
-    # dropout_hd.append(tf.layers.dropout(layer_hd[0], rate=regrate)) #FixME: regmethod might be different
-    # #batchnorm_hd.append(tf.layers.batch_normalization(dropout_hd[0]))
-    # k=1
-    # for i in layers[1:len(layers)+1]:
-    #     print("current k:",k)
-    #     label=str(k+1)
-    #     #layer_hd.append(tfp.layers.DenseFlipout(i, activation=tf.nn.relu)(batchnorm_hd[k-1])) 
-    #     layer_hd.append(tfp.layers.DenseFlipout(i, activation=tf.nn.relu, kernel_prior_fn=prior, kernel_posterior_tensor_fn=method)(dropout_hd[k-1]))
-    #     dropout_hd.append(tf.layers.dropout(layer_hd[k], rate=regrate))
-    #     #batchnorm_hd.append(tf.layers.batch_normalization(dropout_hd[k]))
-    #     k = k+1
-    # print("total number of hidden layers:",k)
-    # last_layer = tfp.layers.DenseFlipout(labels_train.shape[1], activation=tf.nn.relu, kernel_prior_fn=prior, kernel_posterior_tensor_fn=method)(dropout_hd[k-1])
-    # print 'Number of output classes: %i' % (labels_train.shape[1])
-    # model = tf.keras.models.Model(inputs=inputs,outputs=last_layer) 
-    # file = h5py.File('output/BNN_'+tag+'/model.h5', 'w')
-    # weight = []
-    # for i in range(len(file.keys())):
-    #     weight.append(file['weight' + str(i)][:])
-    # model.set_weights(weight)                                                                                                                             
-    # model.summary()
 
     #### Without DropOut
     #layer_hd.append(tf.layers.Dense(layers[0], activation=tf.nn.relu)(inputs))
@@ -188,9 +172,6 @@ def PlotBayesianPerformance(parameters, inputfolder, outputfolder, filepostfix, 
     model = tf.keras.models.Model(inputs=inputs,outputs=last_layer)
     opt  = tf.train.AdamOptimizer()
     mymetrics = [metrics.categorical_accuracy]
-    #model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=mymetrics)
-
-#    file = h5py.File('output/BNN_'+tag+'/model.h5', 'w')
     file = h5py.File(outputfolder+'/model_weights.h5', 'r')
     weight = []
     for i in range(len(file.keys())):
@@ -198,21 +179,13 @@ def PlotBayesianPerformance(parameters, inputfolder, outputfolder, filepostfix, 
     model.set_weights(weight)
     print model.summary()
 
-    # with open(outputfolder+'/model_history.pkl', 'r') as f:
-    #     model_history = pickle.load(f)
-
-#    h5f = h5py.File(outputfolder+'/summary.h5', 'r')
-#    model_history = h5f['training']
     model_history = pd.read_hdf(outputfolder+'/summary.h5')
-#    print("model_history.dtype:",model_history.dtype)
-#    print("model_history:",model_history)
-#    model_history.head()
 
     predpostfix = ''
     if use_best_model:
         predpostfix = '_best'
     pred_train_all, pred_test_all, pred_val_all, pred_signals_all = load_predictions(outputfolder=outputfolder, filepostfix=predpostfix) #load predictions sampled N times
-#
+
 
     pred_signals = {}
     pred_signals_std = {}
@@ -220,62 +193,17 @@ def PlotBayesianPerformance(parameters, inputfolder, outputfolder, filepostfix, 
         pred_signals[i] = np.median(pred_signals_all[i],axis=0)
         pred_signals_std[i] = np.std(pred_signals_all[i],axis=0)
 
-    print("pred_train_all.shape",pred_train_all.shape)
-    print("pred_signals[0].shape",pred_signals[0].shape)
-    print("pred_signals_all[0].shape",pred_signals_all[0].shape)
-
-
-    # pred_train = pred_train_all[1] #FixME: TEST
-    # pred_test = pred_test_all[1] #FixME: TEST
-    # pred_val = pred_val_all[1] #FixME: TEST
     pred_train = np.median(pred_train_all,axis=0)
     pred_test = np.median(pred_test_all,axis=0)
     pred_val = np.median(pred_val_all,axis=0)
-#    pred_signals = np.median(pred_signals_all,axis=0)
-    # pred_train = np.mean(pred_train_all,axis=0)
-    # pred_test = np.mean(pred_test_all,axis=0)
-    # pred_val = np.mean(pred_val_all,axis=0)
 
-    print("pred_train.shape",pred_train.shape)
     pred_train_std = np.std(pred_train_all,axis=0)
     pred_test_std = np.std(pred_test_all,axis=0)
     pred_val_std = np.std(pred_val_all,axis=0)
-   # pred_signals_std = np.std(pred_signals_all,axis=0)
-
-    # print("pred_train_all[0,0,:]",pred_train_all[0,0,:])
-    # print("pred_train_all[1,0,:]",pred_train_all[1,0,:])
-    # print("pred_train_all[2,0,:]",pred_train_all[2,0,:])
-    # print("pred_train_all[3,0,:]",pred_train_all[3,0,:])
-    # print("pred_train_all[4,0,:]",pred_train_all[4,0,:])
-
-    # print("pred_val_all[0,0,:]",pred_val_all[0,0,:])
-    # print("pred_val_all[1,0,:]",pred_val_all[1,0,:])
-    # print("pred_val_all[2,0,:]",pred_val_all[2,0,:])
-    # print("pred_val_all[3,0,:]",pred_val_all[3,0,:])
-    # print("pred_val_all[4,0,:]",pred_val_all[4,0,:])
-
-    print("pred_train[0,:]",pred_train[0,:])
-    print("pred_train_std[0,:]",pred_train_std[0,:])
-    print("pred_signals[0].shape = ",pred_signals[0].shape)
-
-    print("pred_val[0,:]",pred_val[0,:])
-    print("pred_val_std[0,:]",pred_val_std[0,:])
-    print("pred_signals[0][0] = ",pred_signals[0][0])
-    print("pred_signals[1][0] = ",pred_signals[1][0])
-
+ 
     if not os.path.isdir(plotfolder): os.makedirs(plotfolder)
-#    for eventid in 1,100,1000,10000,2,200,2000,20000,3,30,300,3000:
     for eventid in range(100):
         plot_prediction_samples(parameters=parameters,plotfolder=plotfolder+'/ResponseSamples',pred_train_all=pred_train_all,labels_train=labels_train,eventID=eventid)
-
-    # plot_prediction_samples(parameters=parameters,plotfolder=plotfolder,pred_train_all=pred_train_all,labels_train=labels_train,eventID=100)
-    # plot_prediction_samples(parameters=parameters,plotfolder=plotfolder,pred_train_all=pred_train_all,labels_train=labels_train,eventID=1000)
-    # plot_prediction_samples(parameters=parameters,plotfolder=plotfolder,pred_train_all=pred_train_all,labels_train=labels_train,eventID=10000)
-    # plot_prediction_samples(parameters=parameters,plotfolder=plotfolder,pred_train_all=pred_train_all,labels_train=labels_train,eventID=2)
-    # plot_prediction_samples(parameters=parameters,plotfolder=plotfolder,pred_train_all=pred_train_all,labels_train=labels_train,eventID=200)
-    # plot_prediction_samples(parameters=parameters,plotfolder=plotfolder,pred_train_all=pred_train_all,labels_train=labels_train,eventID=2000)
-    # plot_prediction_samples(parameters=parameters,plotfolder=plotfolder,pred_train_all=pred_train_all,labels_train=labels_train,eventID=20000)
-
 
     log_model_performance(parameters=parameters, model_history=model_history, outputfolder=outputfolder) #OK
     plot_loss(parameters=parameters, plotfolder=plotfolder, model_history=model_history) #OK
@@ -285,31 +213,34 @@ def PlotBayesianPerformance(parameters, inputfolder, outputfolder, filepostfix, 
 
     plot_confusion_matrices(parameters=parameters, plotfolder=plotfolder, pred_train=pred_train, labels_train=labels_train, sample_weights_train=sample_weights_train, eventweights_train=eventweights_train, pred_val=pred_val, labels_val=labels_val, sample_weights_val=sample_weights_val, eventweights_val=eventweights_val, use_best_model=use_best_model)
 
-
+    #print "--- mean ---"
     pred_trains, weights_trains, normweights_trains, lumiweights_trains = get_data_dictionaries_onesample(parameters=parameters, eventweights=eventweights_train, sample_weights=sample_weights_train, pred=pred_train, labels=labels_train)
     pred_vals, weights_vals, normweights_vals, lumiweights_vals = get_data_dictionaries_onesample(parameters=parameters, eventweights=eventweights_val, sample_weights=sample_weights_val, pred=pred_val, labels=labels_val)
     pred_tests, weights_tests, normweights_tests, lumiweights_tests = get_data_dictionaries_onesample(parameters=parameters, eventweights=eventweights_test, sample_weights=sample_weights_test, pred=pred_test, labels=labels_test)
 
-    plot_outputs_1d_nodes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, pred_signals=pred_signals, eventweight_signals=eventweight_signals, normweight_signals=normweight_signals, usesignals=usesignals, use_best_model=use_best_model)
-
+   # plot_outputs_1d_nodes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, pred_signals=pred_signals, eventweight_signals=eventweight_signals, normweight_signals=normweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    #print "--- std ---"
     pred_trains_std, weights_trains_std, normweights_trains_std, lumiweights_trains_std = get_data_dictionaries_onesample(parameters=parameters, eventweights=eventweights_train, sample_weights=sample_weights_train, pred=pred_train_std, labels=labels_train)
     pred_vals_std, weights_vals_std, normweights_vals_std, lumiweights_vals_std = get_data_dictionaries_onesample(parameters=parameters, eventweights=eventweights_val, sample_weights=sample_weights_val, pred=pred_val_std, labels=labels_val)
     pred_tests_std, weights_tests_std, normweights_tests_std, lumiweights_tests_std = get_data_dictionaries_onesample(parameters=parameters, eventweights=eventweights_test, sample_weights=sample_weights_test, pred=pred_test_std, labels=labels_test)
-    #print("lumiweights_vals",lumiweights_vals)
-    plot_outputs_1d_nodes_std(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains,pred_trains_std=pred_train_std, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals,pred_vals_std=pred_vals_std, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, pred_signals=pred_signals, pred_signals_std=pred_signals_std,eventweight_signals=eventweight_signals, normweight_signals=normweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    # #plot classifier output with error from std of the output
+    # plot_outputs_1d_nodes_with_stderror(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains,pred_trains_std=pred_train_std, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals,pred_vals_std=pred_vals_std, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, pred_signals=pred_signals, pred_signals_std=pred_signals_std,eventweight_signals=eventweight_signals, normweight_signals=normweight_signals, usesignals=usesignals, use_best_model=use_best_model)
+    # #plot std of classifier output
+    #print("aaaaa pred_trains_std[0] = ",pred_trains_std[0])
+    plot_outputs_1d_nodes_std(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains,pred_trains_std=pred_trains_std, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals,pred_vals_std=pred_vals_std, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, pred_signals=pred_signals, pred_signals_std=pred_signals_std,eventweight_signals=eventweight_signals, normweight_signals=normweight_signals, usesignals=usesignals, use_best_model=use_best_model)
 
     plot_outputs_1d_classes(parameters=parameters, plotfolder=plotfolder, pred_trains=pred_trains, labels_train=labels_train, weights_trains=weights_trains, lumiweights_trains=lumiweights_trains, normweights_trains=normweights_trains, pred_vals=pred_vals, labels_val=labels_val, weights_vals=weights_vals, lumiweights_vals=lumiweights_vals, normweights_vals=normweights_vals, use_best_model=use_best_model)
 
-    # #FixME:
-    # #TypeError: ('Not JSON Serializable:', <function _fn at 0x2b8475af1668>)
-    print("... Store model architecture in PlotBayesianPerformance ...")
-    #Store model as JSON file for usage in UHH2
-    arch = model.to_json()
-    # save the architecture string to a file somehow, the below will work
-    with open(outputfolder+'/architecture.json', 'w') as arch_file:
-        arch_file.write(arch)
-    # now save the weights as an HDF5 file
-    model.save_weights(outputfolder+'/weights.h5')
+    # # #FixME:
+    # # #TypeError: ('Not JSON Serializable:', <function _fn at 0x2b8475af1668>)
+    # print("... Store model architecture in PlotBayesianPerformance ...")
+    # #Store model as JSON file for usage in UHH2
+    # arch = model.to_json()
+    # # save the architecture string to a file somehow, the below will work
+    # with open(outputfolder+'/architecture.json', 'w') as arch_file:
+    #     arch_file.write(arch)
+    # # now save the weights as an HDF5 file
+    # model.save_weights(outputfolder+'/weights.h5')
     print("End of PlotBayesianPerformance")
    
 def PlotDeepPerformance(parameters, inputfolder, outputfolder, filepostfix, plotfolder, use_best_model=False, usesignals=[0]):
@@ -404,6 +335,7 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
 
     # Get inputs
     input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, eventweight_signals, normweight_signals = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
+
     with open(inputfolder+'/variable_names.pkl', 'r') as f:
         variable_names = pickle.load(f)
 

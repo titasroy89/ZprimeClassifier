@@ -52,7 +52,8 @@ parameters = {
               'regmethod': 'dropout',
               'regrate':0.60000,
               'batchnorm': False,
-              'epochs':700,
+#              'epochs':700,
+              'epochs':400,
 #              'epochs':15,
 #              'epochs':7000,
               #'epochs':500,
@@ -69,7 +70,14 @@ parameters = {
 #              'preprocess': 'StandardScaler',
 #              'preprocess': 'QuantileTransformerUniform',
                'preprocess': 'MinMaxScaler',
-               'sigma': 0.5, #sigma for Gaussian prior (BNN only)
+#               'sigma': 0.25, #sigma for Gaussian prior (BNN only)
+#               'sigma': 0.05, #sigma for Gaussian prior (BNN only),
+               'sigma': 1.00, #sigma for Gaussian prior (BNN only),
+               'systvar': 'NOMINAL',
+               'inputdir': 'input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/',#general path to inputs with systematic variations
+    #        'systvar': variations[ivars],
+               'inputsubdir': '/MLInput_Reduced/', #path to input files: inputdir + systvar + inputsubdir
+               'prepreprocess': 'RAW' #for inputs with systematics don't do preprocessing before merging all inputs on one,     #FixME: add prepreprocessing in case one does not need to merge inputs
 }
 
 # ##TEST
@@ -100,7 +108,7 @@ parameters_onpredictions ={'layers':[20, 20],
                             'runonfraction': parameters['runonfraction'],
                             'eqweight':False,
                             'preprocess': parameters['preprocess'],
-                            'sigma': 0.5, #sigma for Gaussian prior (BNN only)
+                            'sigma': 1.0, #sigma for Gaussian prior (BNN only)
 }
 
 tag = dict_to_str(parameters)
@@ -108,24 +116,48 @@ classtag = get_classes_tag(parameters)
 tag_onpredictions = dict_to_str(parameters_onpredictions)
 classtag_onpredictions = get_classes_tag(parameters_onpredictions)
 
+#inputfolder='input/'+parameters['preprocess']+'/'+classtag #Default
+#outputfolder='output/'+parameters['preprocess']+'/BNN_'+tag #Default
+
+
+inputfolder='input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/NOMINAL/MLInput_Reduced/'+parameters['preprocess']+'/'+classtag #NOMINAL
+outputfolder='output/NOMINAL/'+parameters['preprocess']+'/BNN_'+tag #NOMINAL
+plotfolder = 'Plots/'+parameters['preprocess']
+inputfolder_raw='input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/NOMINAL/MLInput_Reduced/'+parameters['prepreprocess']+'/'+classtag #NOMINAL
+outputfolder_raw_BNN='output/NOMINAL/'+parameters['prepreprocess']+'/BNN_'+tag #NOMINAL
+outputfolder_raw_DNN='output/NOMINAL/'+parameters['prepreprocess']+'/DNN_'+tag #NOMINAL
+plotfolder_raw = 'Plots/'+parameters['prepreprocess']
 
 # # # # # # # Get all the inputs
 # # # # # # # # # ==================
-# GetInputs(parameters)
-# PlotInputs(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, filepostfix='', plotfolder='Plots/InputDistributions/' +parameters['preprocess']+'/' + classtag)
+#GetInputs(parameters)
+#PlotInputs(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, filepostfix='', plotfolder='Plots/InputDistributions/' +parameters['preprocess']+'/' + classtag)
+#PlotInputs(parameters, inputfolder=inputfolder, filepostfix='', plotfolder='Plots/InputDistributions/' +parameters['preprocess']+'/' + classtag)
+
+# # # # # # # #BNN #TEST network with RAW (not pre-processed inputs)
+# PlotInputs(parameters, inputfolder=inputfolder_raw, filepostfix='', plotfolder=plotfolder_raw+'/InputDistributions/'+parameters['systvar']+'/' + classtag)
+# TrainBayesianNetwork(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_BNN)
+# PredictExternalBayesianNetwork(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_BNN, filepostfix='',nsamples=50)
+# #Plot validation results and store model for usage in UHH2, etc
+PlotBayesianPerformance(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_BNN, filepostfix='', plotfolder=plotfolder_raw+'/BNN_'+tag, use_best_model=False, usesignals=[2,4])
 
 
-# # # # # # # # # ### # # # #DNN
+# # # # # # # # # # ### # # # #DNN
+# TrainNetwork(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_DNN)
+# PredictExternal(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_DNN, filepostfix='')
+#PlotPerformance(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_DNN, filepostfix='', plotfolder=plotfolder_raw+'/DNN_'+tag, use_best_model=True, usesignals=[2,4])
+
+# # # # # # # # # # ### # # # #DNN
 # TrainNetwork(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+tag)
 # PredictExternal(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+tag, filepostfix='')
 # PlotPerformance(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+tag, filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/DNN_'+tag, use_best_model=True, usesignals=[2,4])
 
 
 # # # # # # #BNN
-TrainBayesianNetwork(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/BNN_'+tag)
-PredictExternalBayesianNetwork(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/BNN_'+tag, filepostfix='',nsamples=100)
+#TrainBayesianNetwork(parameters, inputfolder=inputfolder, outputfolder=outputfolder)
+#PredictExternalBayesianNetwork(parameters, inputfolder=inputfolder, outputfolder=outputfolder, filepostfix='',nsamples=10)
 #Plot validation results and store model for usage in UHH2, etc
-PlotBayesianPerformance(parameters, inputfolder='input/'+parameters['preprocess']+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/BNN_'+tag, filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/BNN_'+tag, use_best_model=False, usesignals=[2,4])
+#PlotBayesianPerformance(parameters, inputfolder=inputfolder, outputfolder=outputfolder, filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/BNN_'+tag, use_best_model=False, usesignals=[2,4])
 
 # # DNN debug
 #TrainDeepNetwork(parameters)

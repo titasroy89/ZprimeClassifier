@@ -31,6 +31,15 @@ import pickle
 import sys
 import os
 
+# ignore weird Warnings: "These warnings are visible whenever you import scipy
+# (or another package) that was compiled against an older numpy than is installed."
+# https://stackoverflow.com/questions/40845304/runtimewarning-numpy-dtype-size-changed-may-indicate-binary-incompatibility
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=DeprecationWarning)
+warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
 def dict_to_str(parameters):
     layers_str = [str(parameters['layers'][i]) for i in range(len(parameters['layers']))]
@@ -57,8 +66,8 @@ def dict_to_str(parameters):
     tag = tag + '__eqweight_' + str(parameters['eqweight'])
     tag = tag + '__preprocess_' + str(parameters['preprocess'])
     tag = tag + '__priorSigma_' + '{num:03d}'.format(num=int(parameters['sigma']*100.))
-
-    if len(tag.split('__')) != len(parameters): raise ValueError('in dict_to_str: Number of parameters given in the dictionary does no longer match the prescription how to build the tag out of it.')
+    #print("------ Sigma in TAG: ",parameters['sigma'])
+    #if len(tag.split('__')) != len(parameters): raise ValueError('in dict_to_str: Number of parameters given in the dictionary does no longer match the prescription how to build the tag out of it.')
     return tag
 
 def get_classes_tag(parameters):
@@ -124,6 +133,7 @@ def load_data(parameters, inputfolder, filepostfix):
         sum_signal_eventweights = signal_eventweights[i].sum()
         signal_normweights[i] = np.array([1./sum_signal_eventweights for j in range(signal_eventweights[i].shape[0])])
     return input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights
+    
 
 
 def load_predictions(outputfolder, filepostfix):
@@ -304,6 +314,7 @@ def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, 
         lumiweights_vals_thistrueclass = {}
         lumiweights_tests_thistrueclass = {}
         for node in classes.keys():
+            print "    ---!!!HEYHEY!!! node: ",node
             if not eqweight:
                 weights_trains_thistrueclass[node] = eventweights_train[labels_train[:,cl] == 1]
                 weights_vals_thistrueclass[node] = eventweights_val[labels_val[:,cl] == 1]
@@ -312,7 +323,9 @@ def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, 
                 weights_trains_thistrueclass[node] = sample_weights_train[labels_train[:,cl] == 1]
                 weights_vals_thistrueclass[node]   = sample_weights_val[labels_val[:,cl] == 1]
                 weights_tests_thistrueclass[node]   = sample_weights_test[labels_test[:,cl] == 1]
-
+            if(node=='TTbar'):
+                print "labels_train[:,cl], pred_train[:,node][labels_train[:,cl] == 1]", labels_train[:,cl], pred_train[:,node][labels_train[:,cl] == 1]
+            
             pred_trains_thistrueclass[node] = pred_train[:,node][labels_train[:,cl] == 1]
             pred_vals_thistrueclass[node] = pred_val[:,node][labels_val[:,cl] == 1]
             pred_tests_thistrueclass[node] = pred_test[:,node][labels_test[:,cl] == 1]
@@ -353,11 +366,16 @@ def get_data_dictionaries_onesample(parameters, eventweights, sample_weights, pr
    
 
     for cl in classes.keys():
+        print "cl = ",cl
         pred_thistrueclass = {}
         weights_thistrueclass = {}
         normweights_thistrueclass = {}
         lumiweights_thistrueclass = {}
         for node in classes.keys():
+            #print "node = ",node
+            if(node == 3): 
+                print "labels[:,cl] = ",labels[:,cl]
+                print "pred[:,node][labels[:,cl] == 1] = ",pred[:,node][labels[:,cl] == 1]
             if not eqweight:
                 weights_thistrueclass[node] = eventweights[labels[:,cl] == 1]
             else:
@@ -373,7 +391,7 @@ def get_data_dictionaries_onesample(parameters, eventweights, sample_weights, pr
         normweights_d[cl] = normweights_thistrueclass
         lumiweights_d[cl] = lumiweights_thistrueclass
 
-   # print("pred_d.shape",pred_d.shape)
+    print("pred_d[0]",pred_d[0])
     return pred_d, weights_d, normweights_d, lumiweights_d
 
 
@@ -551,8 +569,8 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
     print 'plotting ROC curves'
     # Inclusive backgrounds
     # equallyweighted
-    print("HEY, in <plot_rocs> pred_val: ",pred_val[0:2,:])
-    print("HEY, in <plot_rocs> labels_val: ",labels_val[0:2,:])
+#    print("HEY, in <plot_rocs> pred_val: ",pred_val[0:2,:])
+ #   print("HEY, in <plot_rocs> labels_val: ",labels_val[0:2,:])
     FalsePositiveRates, TruePositiveRates, Thresholds, aucs, SignalPuritys = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_val, labels_val=labels_val, weights_val=sample_weights_val)
     # print 'eqweight: ', sample_weights_val[10:15]
     print 'fpr: ', FalsePositiveRates[1][10:15]
@@ -1104,9 +1122,9 @@ def plot_outputs_1d_nodes(parameters, plotfolder, pred_trains, labels_train, wei
         fig.savefig(plotfolder+'/'+title)
         plt.close()
 
-def plot_outputs_1d_nodes_std(parameters, plotfolder, pred_trains,pred_trains_std, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, pred_vals_std, labels_val, weights_vals, lumiweights_vals, normweights_vals, pred_signals=None, pred_signals_std=None, eventweight_signals=None, normweight_signals=None, usesignals=[0], use_best_model=False):
+def plot_outputs_1d_nodes_with_stderror(parameters, plotfolder, pred_trains,pred_trains_std, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, pred_vals_std, labels_val, weights_vals, lumiweights_vals, normweights_vals, pred_signals=None, pred_signals_std=None, eventweight_signals=None, normweight_signals=None, usesignals=[0], use_best_model=False):
 
-    print 'Starting to plot the classifier output distribution with std'
+    print '****** Starting to plot the classifier output distribution with std error ******'
     tag = dict_to_str(parameters)
     classtitles = get_classtitles(parameters)
     do_sig = (pred_signals is not None) and (eventweight_signals is not None) and (normweight_signals is not None)
@@ -1127,15 +1145,13 @@ def plot_outputs_1d_nodes_std(parameters, plotfolder, pred_trains,pred_trains_st
         y_signals = {}
         yerrs_signals = {}
 
-
-
         for i in range(labels_train.shape[1]):
             # 'i' is the true class (always the first index)
-            print("pred_trains[i][0].shape",pred_trains[i][cl].shape)
-            print("pred_vals_std[i][0].shape",pred_vals_std[i][cl].shape)
-            print("pred_trains[i][0]:",pred_trains[i][0])
-            print("pred_vals_std[i][0]:",pred_vals_std[i][0])
-            print "lumiweights_trains[i][0]: ",lumiweights_trains[i][0]
+            # print("pred_trains[i][0].shape",pred_trains[i][cl].shape)
+            # print("pred_vals_std[i][0].shape",pred_vals_std[i][cl].shape)
+            # print("pred_trains[i][0]:",pred_trains[i][0])
+            # print("pred_vals_std[i][0]:",pred_vals_std[i][0])
+            # print "lumiweights_trains[i][0]: ",lumiweights_trains[i][0]
             y_trains[i], dummy = np.histogram(pred_trains[i][cl], bins=nbins, weights=lumiweights_trains[i][cl])
             y_trains_norm[i], bin_edges_trains[i] = np.histogram(pred_trains[i][cl], bins=nbins, weights=weights_trains[i][cl])
             y_vals[i], dummy = np.histogram(pred_vals[i][cl], bins=nbins, weights=lumiweights_vals[i][cl])
@@ -1148,15 +1164,6 @@ def plot_outputs_1d_nodes_std(parameters, plotfolder, pred_trains,pred_trains_st
             y_vals_norm[i] = y_vals_norm[i] * normweights_vals[i][cl][0]
             yerrs_norm[i] = yerrs_norm[i] * normweights_vals[i][cl][0]
 
-#            y_vals[i] = y_vals[i].reshape(len(y_vals[i]),1)
-#            pred_vals_std[i][cl] +=1e-6
-#            yerrs[i] = pred_vals_std[i][cl].reshape(len(pred_vals_std[i][cl]),1)
-#            yerrs_norm[i] =  pred_vals_std[i][cl].reshape(len(pred_vals_std[i][cl]),1)
-#            yerrs_norm[i] = yerrs_norm[i] * normweights_vals[i][cl][0]
-
-#            print("pred_vals_std[i][cl].shape",pred_vals_std[i][cl].shape)
-#            print("yerrs_norm[i].shape",yerrs[i].shape)
-#            print "yerrs_norm[i]",yerrs_norm[i]
 
         if do_sig:
             for key in pred_signals.keys():
@@ -1208,10 +1215,111 @@ def plot_outputs_1d_nodes_std(parameters, plotfolder, pred_trains,pred_trains_st
         plt.ylabel('Number of events / bin (weighted by luminosity)')
         title = 'Distribution_node'+str(cl)
         if use_best_model: title += '_best'
+        title += '_with_stderror.pdf'
+        fig.savefig(plotfolder+'/'+title)
+        print("Store file: ",plotfolder+'/'+title)
+        plt.close()
+
+def plot_outputs_1d_nodes_std(parameters, plotfolder, pred_trains,pred_trains_std, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, pred_vals_std, labels_val, weights_vals, lumiweights_vals, normweights_vals, pred_signals=None, pred_signals_std=None, eventweight_signals=None, normweight_signals=None, usesignals=[0], use_best_model=False):
+
+    print '****** Starting to plot the std of classifier output distribution ******'
+    tag = dict_to_str(parameters)
+    classtitles = get_classtitles(parameters)
+    do_sig = (pred_signals is not None) and (eventweight_signals is not None) and (normweight_signals is not None)
+
+    for cl in range(labels_train.shape[1]):
+        # 'cl' is the output node number
+        nbins = 100
+        binwidth = 1./float(nbins)
+        y_trains = {}
+        y_vals = {}
+        y_trains_norm = {}
+        y_vals_norm = {}
+        bin_edges_trains = {}
+        bin_edges_vals = {}
+        bin_centers = {}
+        yerrs = {}
+        yerrs_norm = {}
+        y_signals = {}
+        yerrs_signals = {}
+
+        for i in range(labels_train.shape[1]):
+            # 'i' is the true class (always the first index)
+#            print("pred_trains[i][0].shape",pred_trains[i][cl].shape)
+ #           print("pred_vals_std[i][0].shape",pred_vals_std[i][cl].shape)
+ #           print("pred_trains[i][0]:",pred_trains[i][0])
+ #           print("pred_vals_std[i][0]:",pred_vals_std[i][0])
+ #           print "lumiweights_trains[i][0]: ",lumiweights_trains[i][0]
+#            print "pred_trains[i][cl].shape = ",pred_trains[i][cl].shape
+#            print "pred_trains_std[i][cl].shape = ",pred_trains_std[i][cl].shape
+#            print "lumiweights_trains[i][cl].shape = ",lumiweights_trains[i][cl].shape
+            y_trains[i], dummy = np.histogram(pred_trains_std[i][cl], bins=nbins, weights=lumiweights_trains[i][cl])
+            y_trains_norm[i], bin_edges_trains[i] = np.histogram(pred_trains_std[i][cl], bins=nbins, weights=weights_trains[i][cl])
+            y_vals[i], dummy = np.histogram(pred_vals_std[i][cl], bins=nbins, weights=lumiweights_vals[i][cl])
+            y_vals_norm[i], bin_edges_vals[i] = np.histogram(pred_vals_std[i][cl], bins=nbins, weights=weights_vals[i][cl])
+
+            yerrs_norm[i] = y_vals_norm[i]**0.5
+            yerrs[i] = y_vals[i]**0.5
+
+            bin_centers[i] = 0.5*(bin_edges_trains[i][1:] + bin_edges_trains[i][:-1])
+            y_vals_norm[i] = y_vals_norm[i] * normweights_vals[i][cl][0]
+            yerrs_norm[i] = yerrs_norm[i] * normweights_vals[i][cl][0]
+
+
+        if do_sig:
+            for key in pred_signals.keys():
+                y_signals[key], dummy = np.histogram(pred_signals_std[key][:,cl], bins=nbins, weights=eventweight_signals[key])
+                yerrs_signals[key] = y_signals[key]**0.5
+
+        plt.clf()
+        fig = plt.figure()
+        classtitle_to_use = ''
+        for i in range(labels_train.shape[1]):
+            #print("labels_train:",labels_train[i])
+            plt.hist(pred_trains_std[i][cl], weights=weights_trains[i][cl]*normweights_trains[i][cl], bins=nbins, histtype='step', label='Training sample, ' + classtitles[i], color=colorstr[i])
+            plt.errorbar(bin_centers[i], y_vals_norm[i], yerr=yerrs_norm[i], fmt = '.', drawstyle = 'steps-mid', linestyle=' ', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            if i == cl:
+                classtitle_to_use = classtitles[i]
+        if do_sig:
+            for sigidx in range(len(usesignals)):
+                plt.hist(pred_signals_std[usesignals[sigidx]][:,cl], weights=eventweight_signals[usesignals[sigidx]]*normweight_signals[usesignals[sigidx]], bins=nbins, histtype='step', label='Signal (%s)' % signalmasses[usesignals[sigidx]], color='k', linestyle=signal_linestyles[sigidx])
+
+
+        plt.legend(loc='best', prop={'size': 8})
+        plt.yscale('log')
+        plt.xlim([-0.05, 1.05])
+        plt.xlabel('STD of classifier output for node '+classtitle_to_use)
+        plt.ylabel('Normalized number of events / bin')
+        title = 'Distribution_node'+str(cl)+'_norm'
+        if use_best_model: title += '_best'
+        title += '_std.pdf'
+        fig.savefig(plotfolder+'/'+title)
+
+        plt.clf()
+        fig = plt.figure()
+        classtitle_to_use = ''
+        for i in range(labels_train.shape[1]):
+            plt.errorbar(bin_centers[i], y_vals[i], yerr=yerrs[i], fmt = '.', drawstyle = 'steps-mid', linestyle=' ', label='Validation sample, ' + classtitles[i], color=colorstr[i])
+            # print i, y_vals[i]
+            if i == cl:
+                classtitle_to_use = classtitles[i]
+        if do_sig:
+            for sigidx in range(len(usesignals)):
+                plt.hist(pred_signals_std[usesignals[sigidx]][:,cl], weights=eventweight_signals[usesignals[sigidx]], bins=nbins, histtype='step', label='Signal (%s)' % signalmasses[usesignals[sigidx]], color='k', linestyle=signal_linestyles[sigidx])
+                # plt.errorbar(bin_centers[i], y_signals[usesignal], yerr=yerrs_signals[usesignal], fmt = '.', drawstyle = 'steps-mid', linestyle=' ', label='Signal sample', color='k')
+
+        plt.legend(loc='best', prop={'size': 8})
+        plt.yscale('log')
+        plt.xlim([-0.05, 1.05])
+        plt.xlabel('STD of classifier output for node '+classtitle_to_use)
+        plt.ylabel('Number of events / bin (weighted by luminosity)')
+        title = 'Distribution_node'+str(cl)
+        if use_best_model: title += '_best'
         title += '_std.pdf'
         fig.savefig(plotfolder+'/'+title)
         print("Store file: ",plotfolder+'/'+title)
         plt.close()
+
 
 def plot_outputs_1d_classes(parameters, plotfolder, pred_trains, labels_train, weights_trains, lumiweights_trains, normweights_trains, pred_vals, labels_val, weights_vals, lumiweights_vals, normweights_vals, use_best_model=False):
 

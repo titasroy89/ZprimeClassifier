@@ -301,7 +301,10 @@ def PredictExternalBayesianNetwork(parameters, inputfolder, outputfolder, filepo
         # roc_curve, roc_op = tf.contrib.metrics.streaming_curve_points(labels, mean_op, num_thresholds=num_thresholds)
         saver = tf.train.Saver()
 
-    with tf.Session(graph=graph) as sess:
+    #Allow growing memory for GPU, see https://stackoverflow.com/questions/36927607/how-can-i-solve-ran-out-of-gpu-memory-in-tensorflow
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    with tf.Session(graph=graph, config=config) as sess:
         file = h5py.File(outputfolder+'/model_weights.h5'.format(tag), 'r')
         print("File with weights:",outputfolder+'/model_weights.h5'.format(tag))
         weight = []
@@ -383,9 +386,9 @@ def PredictExternalBayesianNetwork(parameters, inputfolder, outputfolder, filepo
             try:   
                 while True:                                                                                                                                           
                     print("!!!### Now do it for TRAIN, i#",i)
-#                    print("pred_train.shape: ",pred_train.shape)
-#                    predic_train = sess.run([label_distribution],feed_dict={handle: train_handle,is_training: False})
-                    predic_train, next_element_value, next_sample_weights_value,logits_value = sess.run([label_distribution,next_element,next_sample_weights,logits],feed_dict={handle: train_handle,is_training: False})
+#                    predic_train, next_element_value, next_sample_weights_value,logits_value = sess.run([label_distribution,next_element,next_sample_weights,logits],feed_dict={handle: train_handle,is_training: False})
+
+                    predic_train, __ = sess.run([label_distribution, next_element],feed_dict={handle: train_handle,is_training: False})
                     #print 'next_element_value[0] = ',next_element_value[0]
                     #print 'predic_train[0] = ',predic_train[0]
                     #print("predic_train.shape: ",predic_train.shape)
@@ -399,11 +402,7 @@ def PredictExternalBayesianNetwork(parameters, inputfolder, outputfolder, filepo
                     #            print("next_element_value:",next_element_value[0,:])
                     #            pred_train[:,:,i] = next_labels
                     #if pred_train[i,0,0]!=2:
-                    #FixMe: fill one tmp sheet, resize pred_train and store values there. Repeat for nsamples
-                    #print("np.asarray(predic_train)[0]:",np.asarray(predic_train)[0])
-                    #print("pred_train_1d.shape: ",pred_train_1d.shape)
                     if pred_train_1d[0,0]!=2:
-                        #tmp_pred_train = np.append(pred_train_1d, np.asarray(predic_train)[0],axis=0)
                         tmp_pred_train = np.append(pred_train_1d, np.asarray(predic_train),axis=0)
                         pred_train_1d.resize(tmp_pred_train.shape[0],tmp_pred_train.shape[1])
                         pred_train_1d = tmp_pred_train.copy()
@@ -419,9 +418,7 @@ def PredictExternalBayesianNetwork(parameters, inputfolder, outputfolder, filepo
                         # logits_train_1d.resize(tmp_logits_train.shape[0],tmp_logits_train.shape[1])
                         # logits_train_1d = tmp_logits_train.copy()
 
-
                     else:
-                        #pred_train_1d = np.asarray(predic_train)[0].copy()
                         pred_train_1d = np.asarray(predic_train).copy()
                         # inp_train_1d = np.asarray(next_element_value).copy()
                         # sample_weight_train_1d = np.asarray(next_sample_weights_value).copy()
@@ -451,25 +448,15 @@ def PredictExternalBayesianNetwork(parameters, inputfolder, outputfolder, filepo
             # loop over all batches  
             try:                                                                                                                            
                 while True:                                                                                                                                           
-#                    print("!!!!##### Now do it for VAL, i#",i)
-#                    print("!! pred_val.shape: ",pred_val.shape)
-                    predic_val, next_element_value = sess.run([label_distribution,next_element],feed_dict={handle: val_handle, is_training: False})
-#                    predic_val = sess.run([true_predicted_label],feed_dict={handle: val_handle, is_training: False})
-
-                    #if pred_val[i,0,0]!=2:
-                    #print("pred_val_1d.shape", pred_val_1d.shape)
+                    print("!!!!##### Now do it for VAL, i#",i)
+#                    predic_val, next_element_value = sess.run([label_distribution,next_element],feed_dict={handle: val_handle, is_training: False})
+                    predic_val, __ = sess.run([label_distribution,next_element],feed_dict={handle: val_handle, is_training: False})
                     if pred_val_1d[0,0]!=2:
-#                        print("!!! Add to existing pred_val")
-                        #print("np.asarray(predic_val) ",np.asarray(predic_val))
-#                        tmp_pred_val = np.append(pred_val_1d, np.asarray(predic_val)[0],axis=0)
                         tmp_pred_val = np.append(pred_val_1d, np.asarray(predic_val),axis=0)
                         pred_val_1d.resize(tmp_pred_val.shape[0],tmp_pred_val.shape[1])
                         pred_val_1d = tmp_pred_val.copy()
                     else:
- #                       print("!!! New pred_val")
-#                        pred_val_1d = np.asarray(predic_val)[0].copy()
                         pred_val_1d = np.asarray(predic_val).copy()
-                        #pred_val_1d.reshape((1,labels_train.shape[1]))
             except tf.errors.OutOfRangeError:
                 pass
 
@@ -487,55 +474,30 @@ def PredictExternalBayesianNetwork(parameters, inputfolder, outputfolder, filepo
             try:   
                 while True:           
                     print("!!!#### Now do it for TEST, i#",i)                                                                                                                                
-                    predic_test, next_element_value = sess.run([label_distribution,next_element],feed_dict={handle: test_handle,is_training: False})
-#                    predic_test = sess.run([true_predicted_label],feed_dict={handle: test_handle,is_training: False})
-
-                    #if pred_test[i,0,0]!=2:
+#                    predic_test, next_element_value = sess.run([label_distribution,next_element],feed_dict={handle: test_handle,is_training: False})
+                    predic_test, __ = sess.run([label_distribution,next_element],feed_dict={handle: test_handle,is_training: False})
                     if pred_test_1d[0,0]!=2:
-                        #tmp_pred_test = np.append(pred_test_1d, np.asarray(predic_test)[0],axis=0)
                         tmp_pred_test = np.append(pred_test_1d, np.asarray(predic_test),axis=0)
                         pred_test_1d.resize(tmp_pred_test.shape[0],tmp_pred_test.shape[1])
                         pred_test_1d = tmp_pred_test.copy()
                     else:
-#                        pred_test_1d = np.asarray(predic_test)[0].copy()
                         pred_test_1d = np.asarray(predic_test).copy()
- #                       pred_test_1d.reshape((1,labels_train.shape[1]))
-#                    print("pred_test.shape: ",pred_test.shape)
             except tf.errors.OutOfRangeError:
                 pass
 
             pred_test.resize(nsamples,pred_test_1d.shape[0],pred_test_1d.shape[1])
             pred_test[i] = pred_test_1d.copy()
 
-#         print("Input train [0,0,0], Logits[0,0], SamplWeight[0,0]",inp_train[0,0,0],logits_train[0,0,:],sample_weight_train[0,0])
-# #        print("Input train [1,0,0], Logits[1,0], SamplWeight[1,0]",inp_train[1,0,0],logits_train[1,0,:],sample_weight_train[1,0])
-
-#         print("Input train [0,0,0], Pred[0,0], SamplWeight[0,0]",inp_train[0,0,0],pred_train[0,0,:],sample_weight_train[0,0])
-#  #       print("Input train [1,0,0], Pred[1,0], SamplWeight[1,0]",inp_train[1,0,0],pred_train[1,0,:],sample_weight_train[1,0])
-#         print("Input train [0,1,0], Logits[0,1], SamplWeight[0,1]",inp_train[0,1,0],logits_train[0,1,:],sample_weight_train[0,1])
-#         print("Input train [0,1,0], Pred[0,1], SamplWeight[0,1]",inp_train[0,1,0],pred_train[0,1,:],sample_weight_train[0,1])
-#  #       print("Input train [1,0,0], Pred[1,0], SamplWeight[1,0]",inp_train[1,0,0],pred_train[1,0,:],sample_weight_train[1,0])
-
-
-        # print("Input train [0,10,0], Pred[0,10], SamplWeight[0,10]",inp_train[0,10,0],pred_train[0,10,:],sample_weight_train[0,10])
-        # print("Input train [1,10,0], Pred[1,10], SamplWeight[0,10]",inp_train[1,10,0],pred_train[1,10,:],sample_weight_train[1,10])
-        # print("Input train [0,100,0], Pred[0,100], SamplWeight[0,100]",inp_train[0,100,0],pred_train[0,100,:],sample_weight_train[0,100])
-        # print("Input train [1,100,0], Pred[1,100], SamplWeight[1,100]",inp_train[1,100,0],pred_train[1,100,:],sample_weight_train[1,100])
-
-        # print("Input train [0,0,:]",inp_train[0,0,:])
-        # print("Input train [1,0,:]",inp_train[1,0,:])
         print("Actual Values: pred_train[0,0,:]", pred_train[0,0,:])
         print("Actual Values: pred_train[1,0,:]", pred_train[1,0,:])
 
-        # print("Actual Values: pred_val[0,0,:]", pred_val[0,0,:])
-        # print("Actual Values: pred_val[1,0,:]", pred_val[1,0,:])
-
-        # print("Actual Values: pred_test[0,0,:]", pred_test[0,0,:])
-        # print("Actual Values: pred_test[1,0,:]", pred_test[1,0,:])
-
-        # print("pred_train.shape", pred_train.shape)
-        # print("pred_val.shape", pred_val.shape)
-        # print("pred_test.shape", pred_test.shape)
+        # https://ipython-books.github.io/48-processing-large-numpy-arrays-with-memory-mapping/
+        # f = np.memmap(outputfolder+'/prediction_train_memmapped.dat', dtype=np.float32,mode='w+', shape=(pred_train.shape[0], pred_train.shape[1],pred_train.shape[2]))
+        # for x in xrange(pred_train.shape[0]):
+        #     for y in xrange(pred_train.shape[1]):
+        #         for z in xrange(pred_train.shape[2]):
+        #             f[x,y,z] = pred_train[x,y,z]
+        # del f
 
         np.save(outputfolder+'/prediction_train.npy'  , pred_train)
         for cl in range(len(parameters['classes'])):

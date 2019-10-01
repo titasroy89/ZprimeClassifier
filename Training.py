@@ -264,6 +264,8 @@ def _prior_normal_fn(sigma, dtype, shape, name, trainable, add_variable_fn):
 
 
 def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
+    print "***** TrainBayesianNetwork *****"
+    print "Read inputs from ",inputfolder
     tfd = tfp.distributions
     load_model = False #FixMe: add option to load model
 
@@ -303,6 +305,7 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
 
     input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights = load_data(parameters, inputfolder=inputfolder, filepostfix='')
 
+    print '---- Data is loaded! ----'
     # pandas summary.h5 file contains model information, trainings info, ...
     # file is created and filled with data later
 #    pandas_output = os.path.join('output/BNN_'+tag+'/', "summary.h5")
@@ -345,9 +348,9 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
 
         print("labels_train.shape = ",labels_train.shape)
         print("sample_weights_train.shape = ",sample_weights_train.shape)
-        dataset_train = tf.data.Dataset.from_tensor_slices((input_train_placeholder,labels_train_placeholder,sample_weights_train_placeholder))
+        dataset_train = tf.data.Dataset.from_tensor_slices((input_train_placeholder,labels_train_placeholder,sample_weights_train_placeholder)) #emit only one data at a time
         #batched_dataset_train = dataset_train.batch(batch_size).repeat()
-        batched_dataset_train = dataset_train.batch(batch_size)
+        batched_dataset_train = dataset_train.batch(batch_size) # Combines consecutive elements of the Dataset into a single batch to train smaller batches of data to avoid out of memory errors.
 
         input_val_placeholder = tf.placeholder(input_val.dtype,input_val.shape, name="input_val")
         labels_val_placeholder = tf.placeholder(labels_val.dtype,labels_val.shape, name="labels_val")
@@ -356,7 +359,8 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
         print("-- input_val.dtype = ",input_val.dtype)
 
         dataset_val = tf.data.Dataset.from_tensor_slices((input_val_placeholder,labels_val_placeholder,sample_weights_val_placeholder))
-        batched_dataset_val = dataset_val.batch(input_val.shape[0])
+#        batched_dataset_val = dataset_val.batch(input_val.shape[0]) #whole dataset
+        batched_dataset_val = dataset_val.batch(batch_size) #same batch size as for training
 
         iterator_train = batched_dataset_train.make_initializable_iterator()
         iterator_val = batched_dataset_val.make_initializable_iterator()
@@ -501,14 +505,8 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
         print("labels.shape = ",labels.shape)
         with tf.name_scope('train'):
             train_acc, train_acc_op = tf.metrics.accuracy(labels=labels, predictions=predicted_label)
-#            train_acc_cat, train_acc_cat_op = CatgoricalTruePositives(labels=labels, predictions=predicted_label)
-#            train_acc, train_acc_op = tf.metrics.mean_per_class_accuracy(labels=labels, predictions=predicted_label, num_classes=labels_train.shape[1])
-         #   train_acc, train_acc_op = tf.keras.metrics.categorical_accuracy(labels,predicted_label)
         with tf.name_scope('val'):
             val_acc, val_acc_op = tf.metrics.accuracy(labels=labels, predictions=predicted_label)
-#            val_acc_cat, val_acc_cat_op = CatgoricalTruePositives(labels=labels, predictions=predicted_label)
-#            val_acc, val_acc_op = tf.metrics.mean_per_class_accuracy(labels=labels, predictions=predicted_label, num_classes=labels_train.shape[1])
-       #     val_acc, val_acc_op = tf.keras.metrics.categorical_accuracy(labels,predicted_label)
 
         ############################################################################
     
@@ -581,7 +579,11 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
     # the results. The predctions, weight-array, labels, ROC etc. are saved into
     # h5 file (summary.h5) with different keys
 
-    with tf.Session(graph=graph) as sess:
+    #Allow growing memory for GPU, see https://stackoverflow.com/questions/36927607/how-can-i-solve-ran-out-of-gpu-memory-in-tensorflow
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+
+    with tf.Session(graph=graph, config=config) as sess:
     #with tf.Session() as sess:
 
         # initialize all  variables
@@ -616,13 +618,13 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
 
             # traings loop, epoch starts with 0
             for epoch in range(epochs):
-                pred_train_1d = np.ones((batch_size,labels_train.shape[1]))
-                pred_train_1d = 2*pred_train_1d
-                correct_labels_train_1d = np.ones((batch_size,labels_train.shape[1]))
-                inp_train_1d = np.ones((batch_size,input_train.shape[1]))
-                sample_weight_train_1d = np.ones((batch_size))
+                # pred_train_1d = np.ones((batch_size,labels_train.shape[1]))
+                # pred_train_1d = 2*pred_train_1d
+                # correct_labels_train_1d = np.ones((batch_size,labels_train.shape[1]))
+                # inp_train_1d = np.ones((batch_size,input_train.shape[1]))
+                # sample_weight_train_1d = np.ones((batch_size))
 
-                logits_train_1d = np.ones((batch_size,labels_train.shape[1]))
+                # logits_train_1d = np.ones((batch_size,labels_train.shape[1]))
 
                 # have to initialize for each epoch
                 sess.run(iterator_train.initializer, feed_dict={input_train_placeholder: input_train, labels_train_placeholder: labels_train, sample_weights_train_placeholder: sample_weights_train,
@@ -636,8 +638,8 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
                 while True:
                     try:
                         #sess.run(next_element)
-#                        _, _, loss_value= sess.run([train_op, train_acc_op, loss],
-                        _, _, loss_value, correct_labels, next_element_value, next_sample_weights_value, logits_value, label_distribution_value = sess.run([train_op, train_acc_op, loss, next_labels, next_element, next_sample_weights, logits, label_distribution],
+                        _, _, loss_value= sess.run([train_op, train_acc_op, loss],
+#                        _, _, loss_value, correct_labels, next_element_value, next_sample_weights_value, logits_value, label_distribution_value = sess.run([train_op, train_acc_op, loss, next_labels, next_element, next_sample_weights, logits, label_distribution],
                                                    #                        _, _, loss_value, label_distribution_value, true_predicted_label_value, labels_value  = sess.run([train_op, train_acc_op, loss, label_distribution, true_predicted_label, labels],
                                                    feed_dict={loss_norm: batch_size,
                                                               lr_pl: lr_reduce.lr,
@@ -646,42 +648,44 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
                                                               is_training: True,
                                                               
                                                           })
-#                        print("logits_value: ",logits_value[0,:])
-#                        print("predic_train: ",predic_train[0,:])
-#                        print("correct_labels:",correct_labels[0,:])
-#                        print("next_element_value:",next_element_value[0,:])
-#                        print("label_distribution_value: ",label_distribution_value[0,:])
 
-                        #print("next_sample_weights_value: ",next_sample_weights_value)
-                        #print("loss_value and train_acc_value: ",loss_value,train_acc_value)
-                     #   print("true_predicted_label_value and TRUE, loss: ", true_predicted_label_value[0,:], labels_value[0,:], loss_value)
-                        if pred_train_1d[0,0]!=2:
-                            tmp_pred_train = np.append(pred_train_1d, np.asarray(label_distribution_value),axis=0)
-                            pred_train_1d.resize(tmp_pred_train.shape[0],tmp_pred_train.shape[1])
-                            pred_train_1d = tmp_pred_train.copy()
+                        #print("loss_value: ",loss_value, epoch)
+# #                        print("logits_value: ",logits_value[0,:])
+# #                        print("predic_train: ",predic_train[0,:])
+# #                        print("correct_labels:",correct_labels[0,:])
+# #                        print("next_element_value:",next_element_value[0,:])
+# #                        print("label_distribution_value: ",label_distribution_value[0,:])
 
-                            tmp_inp_train = np.append(inp_train_1d, np.asarray(next_element_value),axis=0)
-                            inp_train_1d.resize(tmp_inp_train.shape[0],tmp_inp_train.shape[1])
-                            inp_train_1d = tmp_inp_train.copy()
+#                         #print("next_sample_weights_value: ",next_sample_weights_value)
+#                         #print("loss_value and train_acc_value: ",loss_value,train_acc_value)
+#                      #   print("true_predicted_label_value and TRUE, loss: ", true_predicted_label_value[0,:], labels_value[0,:], loss_value)
+#                         if pred_train_1d[0,0]!=2:
+#                             tmp_pred_train = np.append(pred_train_1d, np.asarray(label_distribution_value),axis=0)
+#                             pred_train_1d.resize(tmp_pred_train.shape[0],tmp_pred_train.shape[1])
+#                             pred_train_1d = tmp_pred_train.copy()
 
-                            tmp_correct_labels_train = np.append(correct_labels_train_1d, np.asarray(correct_labels),axis=0)
-                            correct_labels_train_1d.resize(tmp_correct_labels_train.shape[0],tmp_correct_labels_train.shape[1])
-                            correct_labels_train_1d = tmp_correct_labels_train.copy()
+#                             tmp_inp_train = np.append(inp_train_1d, np.asarray(next_element_value),axis=0)
+#                             inp_train_1d.resize(tmp_inp_train.shape[0],tmp_inp_train.shape[1])
+#                             inp_train_1d = tmp_inp_train.copy()
 
-                            tmp_sample_weight_train = np.append(sample_weight_train_1d, np.asarray(next_sample_weights_value),axis=0)
-                            sample_weight_train_1d.resize(tmp_sample_weight_train.shape[0])
-                            sample_weight_train_1d = tmp_sample_weight_train.copy()
+#                             tmp_correct_labels_train = np.append(correct_labels_train_1d, np.asarray(correct_labels),axis=0)
+#                             correct_labels_train_1d.resize(tmp_correct_labels_train.shape[0],tmp_correct_labels_train.shape[1])
+#                             correct_labels_train_1d = tmp_correct_labels_train.copy()
 
-                            tmp_logits_train = np.append(logits_train_1d, np.asarray(logits_value),axis=0)
-                            logits_train_1d.resize(tmp_logits_train.shape[0],tmp_logits_train.shape[1])
-                            logits_train_1d = tmp_logits_train.copy()
+#                             tmp_sample_weight_train = np.append(sample_weight_train_1d, np.asarray(next_sample_weights_value),axis=0)
+#                             sample_weight_train_1d.resize(tmp_sample_weight_train.shape[0])
+#                             sample_weight_train_1d = tmp_sample_weight_train.copy()
 
-                        else:
-                            pred_train_1d = np.asarray(label_distribution_value).copy()
-                            inp_train_1d = np.asarray(next_element_value).copy()
-                            sample_weight_train_1d = np.asarray(next_sample_weights_value).copy()
-                            correct_labels_train_1d = np.asarray(correct_labels).copy()
-                            logits_train_1d = np.asarray(logits_value).copy()
+#                             tmp_logits_train = np.append(logits_train_1d, np.asarray(logits_value),axis=0)
+#                             logits_train_1d.resize(tmp_logits_train.shape[0],tmp_logits_train.shape[1])
+#                             logits_train_1d = tmp_logits_train.copy()
+
+#                         else:
+#                             pred_train_1d = np.asarray(label_distribution_value).copy()
+#                             inp_train_1d = np.asarray(next_element_value).copy()
+#                             sample_weight_train_1d = np.asarray(next_sample_weights_value).copy()
+#                             correct_labels_train_1d = np.asarray(correct_labels).copy()
+#                             logits_train_1d = np.asarray(logits_value).copy()
 
                         loss_in_epoch.append(loss_value)
                     except tf.errors.OutOfRangeError:
@@ -699,7 +703,7 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
 
                 # mean over in-epoch loss
                 loss_average = np.mean(loss_in_epoch)
-                #print("loss_average: ",loss_average)
+                print("loss_average_train: ",loss_average)
                 # Estimation of true accuracy!
                 sess.run(iterator_train.initializer, feed_dict={input_train_placeholder: input_train, labels_train_placeholder: labels_train, 
                                                                 sample_weights_train_placeholder: sample_weights_train,
@@ -720,10 +724,12 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
                 stream_vars_test = [v for v in tf.local_variables() if 'train/' in v.name]
                 sess.run(tf.variables_initializer(stream_vars_test))
 
+                #print "training and validation accuracy reset"
                 # doing validation also in batches because of large val sample size
                 sess.run(iterator_val.initializer, feed_dict={input_train_placeholder: input_train, labels_train_placeholder: labels_train, sample_weights_train_placeholder: sample_weights_train,
                                                               input_val_placeholder: input_val, labels_val_placeholder: labels_val, sample_weights_val_placeholder: sample_weights_val})
                 val_loss_list = []
+                #print "Ready for validation check..."
                 while True:
                     try:
                         val_acc_value, val_loss = sess.run([val_acc_op, loss],
@@ -731,12 +737,13 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
                                 handle: validation_handle,
                                 is_training: False,
                         }) # same train_size
+                        #print("val_loss: ",val_loss, epoch)
                         val_loss_list.append(val_loss)
                     except tf.errors.OutOfRangeError:
                         break
 
                 val_loss = np.mean(val_loss_list)
-
+                print("val_loss: ",val_loss)
                 end_time = time.time()
                 time_duration = end_time - start_time
 
@@ -751,13 +758,13 @@ def TrainBayesianNetwork(parameters, inputfolder, outputfolder):
                     "val_loss: {:4.2f}, val_acc: {:4.3f} (time: {:1.1f}s)".format(
                     val_loss, val_acc_value, time_duration))
 
-#                print("Input train [0,:]",inp_train_1d[0,:])
-                print("Input train [0,0],  Logits, True, SampleWeight",inp_train_1d[0,0],logits_train_1d[0,:], correct_labels_train_1d[0,:],sample_weight_train_1d[0])
-                print("Input train [0,0],  Pred, True, SampleWeight",inp_train_1d[0,0],pred_train_1d[0,:], correct_labels_train_1d[0,:],sample_weight_train_1d[0])
-                print("Input train [1,0],  Logits, True, SampleWeight",inp_train_1d[1,0],logits_train_1d[1,:], correct_labels_train_1d[1,:],sample_weight_train_1d[1])
-                print("Input train [1,0],  Pred, True, SampleWeight",inp_train_1d[1,0],pred_train_1d[1,:], correct_labels_train_1d[1,:],sample_weight_train_1d[1])
+# #                print("Input train [0,:]",inp_train_1d[0,:])
+#                 print("Input train [0,0],  Logits, True, SampleWeight",inp_train_1d[0,0],logits_train_1d[0,:], correct_labels_train_1d[0,:],sample_weight_train_1d[0])
+#                 print("Input train [0,0],  Pred, True, SampleWeight",inp_train_1d[0,0],pred_train_1d[0,:], correct_labels_train_1d[0,:],sample_weight_train_1d[0])
+#                 print("Input train [1,0],  Logits, True, SampleWeight",inp_train_1d[1,0],logits_train_1d[1,:], correct_labels_train_1d[1,:],sample_weight_train_1d[1])
+#                 print("Input train [1,0],  Pred, True, SampleWeight",inp_train_1d[1,0],pred_train_1d[1,:], correct_labels_train_1d[1,:],sample_weight_train_1d[1])
 
-                print("Trained model, layer 3:", model.layers[3].get_weights()[0][0])
+#                 print("Trained model, layer 3:", model.layers[3].get_weights()[0][0])
                 # print("Input train [10,0],  Pred, True, SampleWeight",inp_train_1d[10,0],pred_train_1d[10,:], correct_labels_train_1d[10,:],sample_weight_train_1d[10])
                 # print("Input train [100,0],  Pred, True, SampleWeight",inp_train_1d[100,0],pred_train_1d[100,:], correct_labels_train_1d[100,:],sample_weight_train_1d[100])
 
