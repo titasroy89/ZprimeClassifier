@@ -1,0 +1,46 @@
+Train on 7133639 samples, validate on 3566819 samples
+Epoch 1/300
+2021-06-24 07:58:24.594997: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA
+2021-06-24 07:58:24.678282: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1432] Found device 0 with properties: 
+name: NVIDIA Tesla P100-PCIE-16GB major: 6 minor: 0 memoryClockRate(GHz): 1.3285
+pciBusID: 0000:17:00.0
+totalMemory: 15.90GiB freeMemory: 224.75MiB
+2021-06-24 07:58:24.678336: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1511] Adding visible gpu devices: 0
+2021-06-24 07:58:24.917629: I tensorflow/core/common_runtime/gpu/gpu_device.cc:982] Device interconnect StreamExecutor with strength 1 edge matrix:
+2021-06-24 07:58:24.917676: I tensorflow/core/common_runtime/gpu/gpu_device.cc:988]      0 
+2021-06-24 07:58:24.917687: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1001] 0:   N 
+2021-06-24 07:58:24.917795: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 158 MB memory) -> physical GPU (device: 0, name: NVIDIA Tesla P100-PCIE-16GB, pci bus id: 0000:17:00.0, compute capability: 6.0)
+2021-06-24 07:58:24.984103: E tensorflow/stream_executor/cuda/cuda_driver.cc:806] failed to allocate 158.75M (166461440 bytes) from device: CUDA_ERROR_OUT_OF_MEMORY: out of memory
+2021-06-24 07:58:25.549546: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.554295: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.558419: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.562383: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.567436: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.570705: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.574415: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.577508: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.580991: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.584089: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.587469: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.667904: E tensorflow/stream_executor/cuda/cuda_blas.cc:464] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2021-06-24 07:58:25.668001: W tensorflow/stream_executor/stream.cc:2127] attempting to perform BLAS operation using StreamExecutor without BLAS support
+Traceback (most recent call last):
+  File "./steer_QCD.py", line 104, in <module>
+    TrainNetwork(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag)
+  File "/nfs/dust/cms/user/titasroy/Training/ZprimeClassifier/Training.py", line 113, in TrainNetwork
+    model.fit(input_train, labels_train, sample_weight=weights_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(input_test, labels_test, weights_test), callbacks=[checkpointer_everymodel, checkpoint_bestmodel], verbose=2)
+  File "/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/site-packages/keras/engine/training.py", line 1039, in fit
+    validation_steps=validation_steps)
+  File "/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/site-packages/keras/engine/training_arrays.py", line 199, in fit_loop
+    outs = f(ins_batch)
+  File "/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/site-packages/keras/backend/tensorflow_backend.py", line 2715, in __call__
+    return self._call(inputs)
+  File "/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/site-packages/keras/backend/tensorflow_backend.py", line 2675, in _call
+    fetched = self._callable_fn(*array_vals)
+  File "/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/site-packages/tensorflow/python/client/session.py", line 1439, in __call__
+    run_metadata_ptr)
+  File "/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/site-packages/tensorflow/python/framework/errors_impl.py", line 528, in __exit__
+    c_api.TF_GetCode(self.status.status))
+tensorflow.python.framework.errors_impl.InternalError: Blas GEMM launch failed : a.shape=(13107, 36), b.shape=(36, 310), m=13107, n=310, k=36
+	 [[{{node dense_1/MatMul}} = MatMul[T=DT_FLOAT, _class=["loc:@training/Adam/gradients/dense_1/MatMul_grad/MatMul_1"], transpose_a=false, transpose_b=false, _device="/job:localhost/replica:0/task:0/device:GPU:0"](_arg_dense_1_input_0_0/_79, dense_1/kernel/read)]]
+	 [[{{node metrics/categorical_accuracy/Mean/_107}} = _Recv[client_terminated=false, recv_device="/job:localhost/replica:0/task:0/device:CPU:0", send_device="/job:localhost/replica:0/task:0/device:GPU:0", send_device_incarnation=1, tensor_name="edge_791_metrics/categorical_accuracy/Mean", tensor_type=DT_FLOAT, _device="/job:localhost/replica:0/task:0/device:CPU:0"]()]]

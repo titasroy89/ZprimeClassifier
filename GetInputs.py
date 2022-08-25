@@ -54,8 +54,8 @@ def GetInputs(parameters):
     else:
         os.makedirs(inputdir+inputsubdir+systvar+'/'+prepreprocess+'/'+ classtag)
 
-    maxfiles_per_sample = {'TTbar': -1, 'WJets': -1, 'ST': -1, 'DYJets': -1, 'RSGluon': -1, 'RSGluon_All': -1, 'QCD_Mu': -1}
-
+  #  maxfiles_per_sample = {'TTbar_Semi_1': -1, 'TTbar_Semi_2': -1,'TTbar_Semi_3': -1,'TTbar_Semi_4': -1,'TTbar_Other': -1,'WJets': -1, 'ST': -1, 'DY': -1, 'QCD': -1, 'Diboson':-1}
+    maxfiles_per_sample = {'TTbar_All': -1,'WJets': -1, 'ST': -1, 'DYJets': -1, 'QCD': -1, 'Diboson':-1}
     # Find initial file for each class
     #inputfiles = os.listdir('input/MLInput')
 #    inputfiles = os.listdir(inputdir+systvar+inputsubdir)
@@ -65,44 +65,51 @@ def GetInputs(parameters):
     all_inputs = {}
     all_labels = {}
     all_eventweights = {}
+    print classes.keys()
     for cl in classes.keys():
         first = True
-
+        print cl
         # Get list of input files for this class, it's a list of lists --> one list per sample belonging to this class
         lists_of_inputfiles = []
         for i in range(len(classes[cl])):
+ 
             tmp = []
             sample = classes[cl][i]
+            print sample
             idx = 0
+            print len(inputfiles), inputfiles
             for j in range(len(inputfiles)):
-                if classes[cl][i]+'_' in inputfiles[j] and not 'Weights_' in inputfiles[j] and '.npy' in inputfiles[j] and (idx<maxfiles_per_sample[sample] or maxfiles_per_sample[sample]<0):
+#                print classes[cl][i]+'_' 
+                 if classes[cl][i]+'_' in inputfiles[j] and not 'Weights_' in inputfiles[j] and '.npy' in inputfiles[j] and (idx<maxfiles_per_sample[sample] or maxfiles_per_sample[sample]<0):
                     tmp.append(inputfiles[j])
                     idx += 1
             lists_of_inputfiles.append(tmp)
-        print lists_of_inputfiles
+        print "List of input files is: ",lists_of_inputfiles
 
         # Read files for this class
 #        print 'Read files from: ',inputdir+systvar+inputsubdir
         print 'Read files from: ',inputdir+inputsubdir+systvar
         for i in range(len(lists_of_inputfiles)):
             print '\nNow starting with sample %s' % (classes[cl][i])
+            print len(lists_of_inputfiles[i])
             for j in range(len(lists_of_inputfiles[i])):
                 print 'At file no. %i out of %i.' % (j+1, len(lists_of_inputfiles[i]))
+	
                 if first:
-#                    thisinput = np.load(inputdir+systvar+inputsubdir + lists_of_inputfiles[i][j])
-#                    thiseventweight = np.load(inputdir+systvar+inputsubdir +'Weights_' + lists_of_inputfiles[i][j])
-                    thisinput = np.load(inputdir+inputsubdir+systvar +'/'+ lists_of_inputfiles[i][j])
-                    thiseventweight = np.load(inputdir+inputsubdir+systvar+'/'+'Weights_' + lists_of_inputfiles[i][j])
+                    #thisinput = np.load(inputdir+systvar+inputsubdir+'/' + lists_of_inputfiles[i][j])
+                    #thiseventweight = np.load(inputdir+systvar+inputsubdir+'/' +'Weights_' + lists_of_inputfiles[i][j])
+                     thisinput = np.load(inputdir+inputsubdir+systvar +'/'+ lists_of_inputfiles[i][j])
+                     thiseventweight = np.load(inputdir+inputsubdir+systvar+'/'+'Weights_' + lists_of_inputfiles[i][j])
 
-                    first = False
+        #             first = False
                 else:
-                    # thisinput = np.concatenate((thisinput, np.load(inputdir+systvar+inputsubdir + lists_of_inputfiles[i][j])))
+                  #   thisinput = np.concatenate((thisinput, np.load(inputdir+systvar+inputsubdir + lists_of_inputfiles[i][j])))
                     # thiseventweight = np.concatenate((thiseventweight, np.load(inputdir+systvar+inputsubdir+'Weights_' + lists_of_inputfiles[i][j])))
-                    thisinput = np.concatenate((thisinput, np.load(inputdir+inputsubdir+systvar+'/' + lists_of_inputfiles[i][j])))
-                    thiseventweight = np.concatenate((thiseventweight, np.load(inputdir+inputsubdir+systvar+'/'+'Weights_' + lists_of_inputfiles[i][j])))
+                     thisinput = np.concatenate((thisinput, np.load(inputdir+inputsubdir+systvar+'/' + lists_of_inputfiles[i][j])))
+                     thiseventweight = np.concatenate((thiseventweight, np.load(inputdir+inputsubdir+systvar+'/'+'Weights_' + lists_of_inputfiles[i][j])))
 
-        # thisinput = thisinput.astype(np.float32)
-        # thiseventweight = thiseventweight.astype(np.float32)
+        thisinput = thisinput.astype(np.float32)
+        thiseventweight = thiseventweight.astype(np.float32)
         all_inputs[cl] = thisinput
         all_eventweights[cl] = thiseventweight
 
@@ -128,8 +135,8 @@ def GetInputs(parameters):
             if signal_identifiers[i]+'_' in inputfiles[j] and not 'Weights_' in inputfiles[j] and '.npy' in inputfiles[j]:
                 tmp.append(inputfiles[j])
                 idx += 1
-        lists_of_inputfiles_sig.append(tmp)
-    print lists_of_inputfiles_sig
+ #       lists_of_inputfiles_sig.append(tmp)
+    print "signal files:",lists_of_inputfiles_sig
 
     # Read files for this class
     for i in range(len(lists_of_inputfiles_sig)):
@@ -177,7 +184,8 @@ def GetInputs(parameters):
     # Treat inf entries
     input_total[input_total == inf]    = 999999.
     input_total[input_total == -inf]   = -999999.
-    input_total[np.isnan(input_total)] = 0.
+  #  input_total[np.isnan(input_total)] = 0.
+    input_total = np.nan_to_num(input_total)
     # signal_total[signal_total == inf]    = 999999.
     # signal_total[signal_total == -inf]   = -999999.
     # signal_total[np.isnan(signal_total)] = 0.
@@ -197,9 +205,9 @@ def GetInputs(parameters):
     # Cut off some events if not running on full sample
     # percentage = 0.01
     percentage = runonfraction    
-    frac_train = 0.666 * percentage
-    frac_test  = 0.167 * percentage
-    frac_val   = 0.167 * percentage
+    frac_train =0.80 * percentage    #0.666 * percentage
+    frac_test  =0.10 * percentage   #0.167 * percentage
+    frac_val   =0.10 * percentage   #0.167 * percentage
     
     sumweights = np.sum(eventweight_total, axis=0)
     print 'shape of all inputs: ', input_total.shape
@@ -230,7 +238,7 @@ def GetInputs(parameters):
         #find out which class this event belongs to
         thisclass = label_concatenated[i]
         sumweights_classes[thisclass] += eventweight_total[i,0]
-
+    	
     print 'takeupto_(train/test/val): ' , takeupto_train, takeupto_test, takeupto_val
     input_train = input_total[:takeupto_train]
     labels_train = labels_total[:takeupto_train]
@@ -359,7 +367,7 @@ def GetInputs(parameters):
     print 'Store files in ',output_path
     with open(output_path+'/variable_names.pkl', 'w') as f:
         pickle.dump(variable_names, f)
-
+    print input_train
     print "STORE: input_train[0] = ", input_train[0]
     np.save(output_path+'/input_'+fraction+'_train.npy'  , input_train)
     np.save(output_path+'/input_'+fraction+'_test.npy'   , input_test)

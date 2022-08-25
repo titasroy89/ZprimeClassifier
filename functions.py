@@ -123,7 +123,7 @@ def load_data(parameters, inputfolder, filepostfix):
     sample_weights_val = np.load(inputfolder+'/sample_weights_'+fraction+'_val'+filepostfix+'.npy').astype(np.float32)
     eventweights_val = np.load(inputfolder+'/eventweights_'+fraction+'_val'+filepostfix+'.npy').astype(np.float32)
 
-    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
+    signal_identifiers = []
     signals = {}
     signal_eventweights = {}
     signal_normweights = {}
@@ -139,7 +139,7 @@ def load_data(parameters, inputfolder, filepostfix):
 def load_predictions(outputfolder, filepostfix):
 
     print 'Loading predictions...'
-    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
+    signal_identifiers = []
 
     # Load model prediction
     pred_signals = {}
@@ -571,6 +571,10 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
     # equallyweighted
 #    print("HEY, in <plot_rocs> pred_val: ",pred_val[0:2,:])
  #   print("HEY, in <plot_rocs> labels_val: ",labels_val[0:2,:])
+    print "parameters",parameters
+    print "pred_val",pred_val
+    print "labels_val",labels_val
+    print "weights_val",sample_weights_val
     FalsePositiveRates, TruePositiveRates, Thresholds, aucs, SignalPuritys = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_val, labels_val=labels_val, weights_val=sample_weights_val)
     # print 'eqweight: ', sample_weights_val[10:15]
     print 'fpr: ', FalsePositiveRates[1][10:15]
@@ -729,6 +733,8 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
 
         # Now just plot all 4 curves (lumiweighted)
         plt.clf()
+        print do_sig
+        do_sig=False
         fig = plt.figure()
         plt.xticks(np.arange(0.1,1.1,0.1))
         plt.grid(True, which='both')
@@ -788,11 +794,11 @@ def plot_loss(parameters, plotfolder, model_history):
 
     plt.legend(loc='upper right')
     #plt.ylim([0.1, 0.25])
-    plt.ylim([0.01,100])
+    plt.ylim([0.0001,100])
     plt.yscale("log")
     if eqweight:
 #        plt.ylim([0.01, 0.06])
-        plt.ylim([0.1,100])
+        plt.ylim([0.01,1])
     plt.ylabel('Loss')
     plt.xlabel('Number of training epochs')
     fig.savefig(plotfolder+'/Loss.pdf')
@@ -1079,6 +1085,7 @@ def plot_outputs_1d_nodes(parameters, plotfolder, pred_trains, labels_train, wei
 
         plt.clf()
         fig = plt.figure()
+        do_sig=False
         classtitle_to_use = ''
         for i in range(labels_train.shape[1]):
             plt.hist(pred_trains[i][cl], weights=weights_trains[i][cl]*normweights_trains[i][cl], bins=nbins, histtype='step', label='Training sample, ' + classtitles[i], color=colorstr[i])

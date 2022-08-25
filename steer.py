@@ -23,10 +23,10 @@ from GetInputs import *
 from RankNetworks import *
 from PredictExternal import *
 from functions import *
-from TrainModelOnPredictions import *
-from TrainSecondNetwork import *
-from TrainThirdNetwork import *
-from ExportModel import *
+#from TrainModelOnPredictions import *
+#from TrainSecondNetwork import *
+#from TrainThirdNetwork import *
+#from ExportModel import *
 
 # ignore weird Warnings: "These warnings are visible whenever you import scipy
 # (or another package) that was compiled against an older numpy than is installed."
@@ -34,7 +34,9 @@ from ExportModel import *
 import warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
-
+variations = ['NOMINAL']
+merged_str = 'Merged'
+channel = 'muon'
 
 
 
@@ -48,7 +50,7 @@ parameters = {
               #'batchsize': 128,
               # 'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['DYJets'], 3:['WJets'], 4:['ST']},
               #'classes':{0: ['QCD_Mu'], 1: ['TTbar', 'ST'], 2:['DYJets', 'WJets'], 3:['RSGluon_All']},
-              'classes':{0: ['QCD_Mu'], 1: ['TTbar'], 2:['WJets'], 3:['DYJets','ST']},
+              'classes':{0: ['QCD'], 1: ['TTbar'], 2:['WJets'], 3:['DYJets','ST']},
               'regmethod': 'dropout',
               'regrate':0.60000,
               'batchnorm': False,
@@ -74,9 +76,9 @@ parameters = {
 #               'sigma': 0.05, #sigma for Gaussian prior (BNN only),
                'sigma': 1.00, #sigma for Gaussian prior (BNN only),
                'systvar': 'NOMINAL',
-               'inputdir': 'input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/',#general path to inputs with systematic variations
+               'inputdir': '../../MLInputs_mu_HLTinv_24June/',#'input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/',#general path to inputs with systematic variations
     #        'systvar': variations[ivars],
-               'inputsubdir': '/MLInput_Reduced/', #path to input files: inputdir + systvar + inputsubdir
+               'inputsubdir': '/MLInput/', #path to input files: inputdir + systvar + inputsubdir
                'prepreprocess': 'RAW' #for inputs with systematics don't do preprocessing before merging all inputs on one,     #FixME: add prepreprocessing in case one does not need to merge inputs
 }
 
@@ -118,15 +120,44 @@ classtag_onpredictions = get_classes_tag(parameters_onpredictions)
 
 #inputfolder='input/'+parameters['preprocess']+'/'+classtag #Default
 #outputfolder='output/'+parameters['preprocess']+'/BNN_'+tag #Default
+for ivars in range(len(variations)):
+     merged_str = merged_str+'__'+variations[ivars]
+     parameters['systvar'] = variations[ivars]
+     # # # # # # Get all the inputs
+     # # # # # # # # # ==================
+     inputfolder = parameters['inputdir']+parameters['inputsubdir']+parameters['systvar']+'/'+parameters['prepreprocess']+'/'+ classtag
+     GetInputs(parameters)
+     print "I am here"
+     PlotInputs(parameters, inputfolder=inputfolder, filepostfix='', plotfolder='Plots/'+parameters['prepreprocess']+'/InputDistributions/'+parameters['systvar']+'/' + classtag)
 
+MixInputs(parameters, outputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/' + classtag, variations=variations, filepostfix='')
+print "done with MixInputs"
+SplitInputs(parameters, outputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/' + classtag, filepostfix='')
+print "done with SplitInputs"
+FitPrepocessing(parameters, outputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/' + classtag, filepostfix='')
+ApplyPrepocessing(parameters, outputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/' + classtag, filepostfix='',setid='train')
+ApplyPrepocessing(parameters, outputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/' + classtag, filepostfix='',setid='test')
+ApplyPrepocessing(parameters, outputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/' + classtag, filepostfix='',setid='val')
 
-inputfolder='input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/NOMINAL/MLInput_Reduced/'+parameters['preprocess']+'/'+classtag #NOMINAL
-outputfolder='output/NOMINAL/'+parameters['preprocess']+'/BNN_'+tag #NOMINAL
+inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/' + classtag
+outputfolder='output/'+parameters['preprocess']+'/'+merged_str+'/' + classtag+'/DNN_'+channel+'_'+tag
 plotfolder = 'Plots/'+parameters['preprocess']
-inputfolder_raw='input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/NOMINAL/MLInput_Reduced/'+parameters['prepreprocess']+'/'+classtag #NOMINAL
-outputfolder_raw_BNN='output/NOMINAL/'+parameters['prepreprocess']+'/BNN_'+tag #NOMINAL
-outputfolder_raw_DNN='output/NOMINAL/'+parameters['prepreprocess']+'/DNN_'+tag #NOMINAL
-plotfolder_raw = 'Plots/'+parameters['prepreprocess']
+PlotInputs(parameters, inputfolder=inputfolder, filepostfix='', plotfolder=plotfolder+'/InputDistributions/'+merged_str+'_'+channel+'/' + classtag)
+
+
+
+TrainNetwork(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag)
+PredictExternal(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag, filepostfix='')
+PlotPerformance(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag, filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/DNN_'+tag, use_best_model=True, usesignals=[2,4])
+
+#inputfolder= parameters['inputdir']+parameters['inputsubdir']+parameters['systvar']+'/'+parameters['prepreprocess']+'/'+ classtag
+#inputfolder='input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/NOMINAL/MLInput_Reduced/'+parameters['preprocess']+'/'+classtag #NOMINAL
+#outputfolder='output/NOMINAL/'+parameters['preprocess']+'/BNN_'+tag #NOMINAL
+#plotfolder = 'Plots/'+parameters['preprocess']
+#inputfolder_raw='input/2017_Moriond19JEC_RightLumiweights_forml_morevar_Puppi/NOMINAL/MLInput_Reduced/'+parameters['prepreprocess']+'/'+classtag #NOMINAL
+#outputfolder_raw_BNN='output/NOMINAL/'+parameters['prepreprocess']+'/BNN_'+tag #NOMINAL
+#outputfolder_raw_DNN='output/NOMINAL/'+parameters['prepreprocess']+'/DNN_'+tag #NOMINAL
+#plotfolder_raw = 'Plots/'+parameters['prepreprocess']
 
 # # # # # # # Get all the inputs
 # # # # # # # # # ==================
@@ -139,12 +170,12 @@ plotfolder_raw = 'Plots/'+parameters['prepreprocess']
 # TrainBayesianNetwork(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_BNN)
 # PredictExternalBayesianNetwork(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_BNN, filepostfix='',nsamples=50)
 # #Plot validation results and store model for usage in UHH2, etc
-PlotBayesianPerformance(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_BNN, filepostfix='', plotfolder=plotfolder_raw+'/BNN_'+tag, use_best_model=False, usesignals=[2,4])
+#PlotBayesianPerformance(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_BNN, filepostfix='', plotfolder=plotfolder_raw+'/BNN_'+tag, use_best_model=False, usesignals=[2,4])
 
 
 # # # # # # # # # # ### # # # #DNN
-# TrainNetwork(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_DNN)
-# PredictExternal(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_DNN, filepostfix='')
+#TrainNetwork(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_DNN)
+#PredictExternal(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_DNN, filepostfix='')
 #PlotPerformance(parameters, inputfolder=inputfolder_raw, outputfolder=outputfolder_raw_DNN, filepostfix='', plotfolder=plotfolder_raw+'/DNN_'+tag, use_best_model=True, usesignals=[2,4])
 
 # # # # # # # # # # ### # # # #DNN

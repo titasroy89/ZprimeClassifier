@@ -1,0 +1,7 @@
+export PATH="/nfs/dust/cms/user/titasroy/anaconda2/bin:$PATH"
+#export PYTHONPATH=:"/nfs/dust/cms/user/titasroy/anaconda2/lib/python27.zip":"/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7":"/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/plat-linux2":"/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/lib-tk":"/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/lib-old":"/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/lib-dynload":"/nfs/dust/cms/user/titasroy/anaconda2/lib/python2.7/site-packages":"/usr/lib64/python2.7/site-packages"
+source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.22.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/nfs/dust/cms/user/titasroy/anaconda2/lib
+#export TMPDIR=/nfs/dust/cms/user/titasroy/tm
+
+

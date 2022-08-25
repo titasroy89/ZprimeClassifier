@@ -46,8 +46,8 @@ def PredictExternal(parameters, inputfolder, outputfolder, filepostfix):
     model_best = keras.models.load_model(outputfolder+'/model_best.h5')
     input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
 
-    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
-
+#    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
+    signal_identifiers = []
     # Do the predictions
     print 'Now that the model is trained, we\'re going to predict the labels of all 3 sets. '
     print 'predicting for training set'

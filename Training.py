@@ -4,7 +4,7 @@ import keras
 import matplotlib
 import math
 import matplotlib.pyplot as plt
-
+import random
 import tensorflow as tf
 import tensorflow_probability as tfp
 #from tensorflow_probability.python.layers.dense_variational import DenseFlipout
@@ -62,7 +62,7 @@ def TrainNetwork(parameters, inputfolder, outputfolder):
         # print 'Found model, but I will retrain it!'
 #    if not os.path.isdir('output/' + tag): os.makedirs('output/'+tag)
     if not os.path.isdir(outputfolder): os.makedirs(outputfolder)
-
+    
     input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights = load_data(parameters, inputfolder=inputfolder, filepostfix='')
 
 
@@ -89,7 +89,7 @@ def TrainNetwork(parameters, inputfolder, outputfolder):
     # model.add(Dense(labels_train.shape[1], activation='sigmoid', kernel_regularizer=kernel_regularizer))
     print 'Number of output classes: %i' % (labels_train.shape[1])
 
-
+#    tf.keras.utils.set_random_seed(0)
 
     # Train the network
     opt = keras.optimizers.Adam(lr=learningrate, beta_1=0.9, beta_2=0.999, epsilon=1e-6, decay=0.0, amsgrad=False)

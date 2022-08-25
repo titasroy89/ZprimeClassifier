@@ -60,6 +60,7 @@ def PlotPerformance(parameters, inputfolder, outputfolder, filepostfix, plotfold
     classtag = get_classes_tag(parameters)
 
     # Get model and its history
+    print outputfolder
     model = keras.models.load_model(outputfolder+'/model.h5')
     with open(outputfolder+'/model_history.pkl', 'r') as f:
         model_history = pickle.load(f)
@@ -340,7 +341,10 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
         variable_names = pickle.load(f)
 
     print "GET for plotting: input_train[0] = ", input_train[0]
-
+    print range(labels_train.shape[1])
+    print labels_train[:,1] == 1
+    print labels_train[:1]
+    print input_train[labels_train[:,1] ]
     # Divide into classes
     input_train_classes = {}
     input_test_classes = {}
@@ -348,6 +352,7 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
     weights_train_classes = {}
     weights_test_classes = {}
     weights_val_classes = {}
+    print "range of i:",range(labels_train.shape[1])
     for i in range(labels_train.shape[1]):
         input_train_classes[i] = input_train[labels_train[:,i] == 1]
         input_test_classes[i] = input_test[labels_test[:,i] == 1]
@@ -355,7 +360,7 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
         weights_train_classes[i] = sample_weights_train[labels_train[:,i] == 1]
         weights_test_classes[i] = sample_weights_test[labels_test[:,i] == 1]
         weights_val_classes[i] = sample_weights_val[labels_val[:,i] == 1]
-
+    print input_train_classes[1] 
     # Create class-title dictionary
     classes = parameters['classes']
     classtitles = {}
@@ -367,23 +372,42 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
             if i < len(list)-1:
                 title = title + '+'
         classtitles[key] = title
-
+    print i
     matplotlib.style.use('default')
     # print input_train_classes
     nbins = 50
     idx = 0
+    i=len(input_train_classes)-1
+    print input_train_classes 
+    print input_test_classes
     for varname in variable_names:
+	print varname
+
+        print "Length of input", len(input_train_classes)
+	print i
+        print  input_train_classes[i]
+     #   print "Input train classes",input_train_classes[i][:,idxi]
+        print max(input_train_classes[i][:,idx]) 
         xmax = max([max(input_train_classes[i][:,idx]) for i in range(len(input_train_classes))])
         xmin = min([min(input_train_classes[i][:,idx]) for i in range(len(input_train_classes))])
+     #   xmax=1.
+      #  xmin=0.
         if xmax == xmin: xmax = xmin + 1.
         xmin = min([0,xmin])
         binwidth = (xmax - xmin) / float(nbins)
+        print xmax, xmin, binwidth
         bins = np.arange(xmin, xmax + binwidth, binwidth)
 
         plt.clf()
         fig = plt.figure()
         for i in range(len(input_train_classes)):
             mycolor = 'C'+str(i)
+            print "variable is:",varname
+            print "dataset:",input_train_classes[i][:,idx]
+            print "weights:",weights_train_classes[i]
+            print len(input_train_classes[i][:,idx]), len(weights_train_classes[i])
+            print "bins:",bins
+            print "color:",colorstr[i], classtitles[i]
             plt.hist(input_train_classes[i][:,idx], weights=weights_train_classes[i], bins=bins, histtype='step', label='Training sample, '+classtitles[i], color=colorstr[i])
         plt.legend(loc='best')
         plt.yscale('log')
@@ -394,6 +418,6 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
         # else: fig.savefig('Plots/InputDistributions/' + classtag+  '/' + varname + '_part.pdf')
         idx += 1
 
-        sys.stdout.write( '{0:d} of {1:d} plots done.\r'.format(idx, len(variable_names)))
+        sys.stdout.write( '\n{0:d} of {1:d} plots done.\r'.format(idx, len(variable_names)))
         if not i == len(variable_names): sys.stdout.flush()
         plt.close()
