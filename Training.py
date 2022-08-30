@@ -89,7 +89,8 @@ def TrainNetwork(parameters, inputfolder, outputfolder):
     # model.add(Dense(labels_train.shape[1], activation='sigmoid', kernel_regularizer=kernel_regularizer))
     print 'Number of output classes: %i' % (labels_train.shape[1])
 
-#    tf.keras.utils.set_random_seed(0)
+    #np.random.seed(0)
+    #tf.set_random_seed(0)
 
     # Train the network
     opt = keras.optimizers.Adam(lr=learningrate, beta_1=0.9, beta_2=0.999, epsilon=1e-6, decay=0.0, amsgrad=False)

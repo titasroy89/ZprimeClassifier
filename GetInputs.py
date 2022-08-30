@@ -30,7 +30,7 @@ warnings.simplefilter(action='ignore', category=DeprecationWarning)
 warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
 def GetInputs(parameters):
-
+    #BatchNornmalization()
     prepreprocess = 'RAW' #for inputs with systematics don't do preprocessing before merging all inputs on one
     #FixME: add prepreprocessing in case one does not need to merge inputs
     # Get parameters
@@ -55,7 +55,8 @@ def GetInputs(parameters):
         os.makedirs(inputdir+inputsubdir+systvar+'/'+prepreprocess+'/'+ classtag)
 
   #  maxfiles_per_sample = {'TTbar_Semi_1': -1, 'TTbar_Semi_2': -1,'TTbar_Semi_3': -1,'TTbar_Semi_4': -1,'TTbar_Other': -1,'WJets': -1, 'ST': -1, 'DY': -1, 'QCD': -1, 'Diboson':-1}
-    maxfiles_per_sample = {'TTbar_All': -1,'WJets': -1, 'ST': -1, 'DYJets': -1, 'QCD': -1, 'Diboson':-1}
+    maxfiles_per_sample = {'TTbar_All': -1,'WJets': -1, 'ST': -1, 'DY': -1, 'QCD': -1, 'Diboson':-1}
+  #  maxfiles_per_sample = {'TTbar': -1,'WJets': -1, 'ST': -1, 'DYJets': -1, 'QCD': -1, 'Diboson':-1}
     # Find initial file for each class
     #inputfiles = os.listdir('input/MLInput')
 #    inputfiles = os.listdir(inputdir+systvar+inputsubdir)

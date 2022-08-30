@@ -58,12 +58,12 @@ parameters = {
     'layers':[512,512], #512
     'batchsize': 13107,#131072
     #'classes':{0: ['QCD'], 1:['TTbar_Semi_1','TTbar_Semi_2','TTbar_Semi_3','TTbar_Semi_4','TTbar_Other','ST','WJets','DY','Diboson']},
-    'classes':{0: ['QCD'], 1:['TTbar_All','ST','WJets','DYJets','Diboson']},
+    'classes':{0: ['QCD'], 1:['TTbar_All','ST','WJets','DY','Diboson']},
     'regmethod': 'dropout',
     'regrate':0.50,
-    'batchnorm': False,
+    'batchnorm': True,
     'epochs':500, #300
-    'learningrate': 0.0005,
+    'learningrate': 0.0001,#0.0005,
     'decay_steps':1.0,
     'decay_rate': 0.0025,
     'runonfraction': 1.0,
@@ -79,7 +79,8 @@ tag = dict_to_str(parameters)
 print "tag is:",tag
 classtag = get_classes_tag(parameters)
 print "classtag is:",classtag
-
+np.random.seed(1234)
+tf.set_random_seed(1234)
 ########## GetInputs ########
 for ivars in range(len(variations)):
      merged_str = merged_str+'__'+variations[ivars]
@@ -106,13 +107,18 @@ plotfolder = 'Plots/'+parameters['preprocess']
 #PlotInputs(parameters, inputfolder=inputfolder, filepostfix='', plotfolder=plotfolder+'/InputDistributions/'+merged_str+'_'+channel+'/' + classtag)
 
 ########
-tf.keras.utils.set_random_seed(0)
+#np.random.seed(0)
+#tf.set_random_seed(0)
+#tf.keras.utils.set_random_seed(0)
 # # DNN 
-TrainNetwork(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel)
+#gpu_fraction = 0.1
+#gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction)
+#sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+TrainNetwork(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag)
 print outputfolder
-PredictExternal(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel, filepostfix='')
+PredictExternal(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag, filepostfix='')
 
 print "outputfolder:", 'output/'+parameters['preprocess']+'/DNN_'+tag
-PlotPerformance(parameters, inputfolder=parameters['inputdir']+'/'+parameters['preprocess']+'/'+merged_str+'/'+classtag,outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel,filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/DNN_'+channel, use_best_model=True, usesignals=[2,4])
+PlotPerformance(parameters, inputfolder=parameters['inputdir']+'/'+parameters['preprocess']+'/'+merged_str+'/'+classtag,outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag,filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/DNN_'+channel, use_best_model=True, usesignals=[2,4])
 
 
