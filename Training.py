@@ -76,33 +76,40 @@ def TrainNetwork(parameters, inputfolder, outputfolder):
 
 
     print 'Number of input variables: %i' % (input_train.shape[1])
-    model.add(Dense(layers[0], activation='relu', input_shape=(input_train.shape[1],), kernel_regularizer=kernel_regularizer))
+    model.add(Dense(layers[0], activation='sigmoid', input_shape=(input_train.shape[1],), kernel_regularizer=kernel_regularizer))
     if regmethod == 'dropout': model.add(Dropout(regrate))
     if batchnorm: model.add(BatchNormalization())
 
     for i in layers[1:len(layers)+1]:
-        model.add(Dense(i, activation='relu', kernel_regularizer=kernel_regularizer))
+        model.add(Dense(i, activation='sigmoid', kernel_regularizer=kernel_regularizer))
         if batchnorm: model.add(BatchNormalization())
         if regmethod == 'dropout': model.add(Dropout(regrate))
-
-    model.add(Dense(labels_train.shape[1], activation='softmax', kernel_regularizer=kernel_regularizer))
-    # model.add(Dense(labels_train.shape[1], activation='sigmoid', kernel_regularizer=kernel_regularizer))
+    print"labels_train:", labels_train.shape[1],
+    #model.add(Dense(labels_train.shape[1], activation='softmax', kernel_regularizer=kernel_regularizer))
+    model.add(Dense(labels_train.shape[1], activation='sigmoid', kernel_regularizer=kernel_regularizer))
     print 'Number of output classes: %i' % (labels_train.shape[1])
 
     #np.random.seed(0)
     #tf.set_random_seed(0)
-
+    reduce_lr=keras.callbacks.ReduceLROnPlateau(monitor="categorical_accuracy",factor=0.1,patience=10,verbose=0,mode="max",min_delta=0.0001,cooldown=0,min_lr=0)
+    #lr_schedule =ExponentialDecay(initial_learning_rate=0.1, decay_steps=10000, decay_rate=0.9)
     # Train the network
-    opt = keras.optimizers.Adam(lr=learningrate, beta_1=0.9, beta_2=0.999, epsilon=1e-6, decay=0.0, amsgrad=False)
-    mymetrics = [metrics.categorical_accuracy]
-    # mymetrics = [metrics.categorical_accuracy, metrics.mean_squared_error, metrics.categorical_crossentropy, metrics.kullback_leibler_divergence, metrics.cosine_proximity]
-    model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=mymetrics)
+    opt= keras.optimizers.SGD(lr=learningrate, decay=1e-6, momentum=0.9, nesterov=True)
+
+    #opt = keras.optimizers.Adam(lr=lr_schedule, amsgrad=False)
+    #opt = keras.optimizers.Adam(lr=learningrate, beta_1=0.9, beta_2=0.999, epsilon=1e-6, decay=0.0, amsgrad=False)
+    #mymetrics = [metrics.categorical_accuracy]
+    #mymetrics=['accuracy']
+    mymetrics = [metrics.categorical_accuracy, metrics.mean_squared_error, metrics.binary_crossentropy, metrics.kullback_leibler_divergence, metrics.cosine_proximity]
+    #model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=mymetrics)
+    model.compile(loss='binary_crossentropy', optimizer=opt, metrics=mymetrics)
+    #model.compile(optimizer='adam',loss='mean_squared_error', metrics=mymetrics)
     print model.summary()
 
     period = epochs / 5
     checkpointer = ModelCheckpoint(filepath=outputfolder+'/model_epoch{epoch:02d}.h5', verbose=1, save_best_only=False, period=period)
     checkpointer_everymodel = ModelCheckpoint(filepath=outputfolder+'/model_epoch{epoch:02d}.h5', verbose=1, save_best_only=False, mode='auto', period=1)
-    checkpoint_bestmodel = ModelCheckpoint(filepath=outputfolder+'/model_best.h5', monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='min', period=1)
+    checkpoint_bestmodel = ModelCheckpoint(filepath=outputfolder+'/model_best.h5', monitor='val_accuracy', verbose=0, save_best_only=True, save_weights_only=True, mode='max', period=1)#changed save_weights to true
     earlystopping = EarlyStopping(monitor='val_loss', min_delta=0.005, patience=100, verbose=0, mode='min', baseline=None, restore_best_weights=True)
     LRreducer = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=50, min_delta=0.001, mode='min')
     weights_train, weights_test = sample_weights_train, sample_weights_test
@@ -110,8 +117,9 @@ def TrainNetwork(parameters, inputfolder, outputfolder):
         weights_train, weights_test = eventweights_train, eventweights_test
     # model.fit(input_train, labels_train, sample_weight=weights_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(input_test, labels_test, weights_test), callbacks=[checkpointer, checkpoint_bestmodel, earlystopping], verbose=1)
     # model.fit(input_train, labels_train, sample_weight=weights_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(input_test, labels_test, weights_test), callbacks=[checkpointer_everymodel, checkpoint_bestmodel, LRreducer], verbose=2)
-    # model.fit(input_train, labels_train, sample_weight=weights_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(input_test, labels_test, weights_test), callbacks=[checkpointer, checkpoint_bestmodel], verbose=1)
-    model.fit(input_train, labels_train, sample_weight=weights_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(input_test, labels_test, weights_test), callbacks=[checkpointer_everymodel, checkpoint_bestmodel], verbose=2)
+    model.fit(input_train, labels_train, sample_weight=weights_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(input_test, labels_test, weights_test), callbacks=[checkpointer, checkpoint_bestmodel], verbose=1)
+    #model.load_weights(filepath=outputfolder+'/model_best.h5')#added this
+    #model.fit(input_train, labels_train, sample_weight=weights_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(input_test, labels_test, weights_test), callbacks=[reduce_lr,checkpointer_everymodel, checkpoint_bestmodel], verbose=2)
 
 
     model.save(outputfolder+'/model.h5')
@@ -257,8 +265,7 @@ def _prior_normal_fn(sigma, dtype, shape, name, trainable, add_variable_fn):
     """Normal prior with mu=0 and sigma=sigma. Can be passed as an argument to
     the tpf.layers
     """
-    del name, trainable, add_variable_fn
-
+    del name, trainable, add_variable_max
     dist = tfd.Normal(loc=tf.zeros(shape, dtype), scale=dtype.as_numpy_dtype(sigma))
     batch_ndims = tf.size(input=dist.batch_shape_tensor())
     return tfd.Independent(dist, reinterpreted_batch_ndims=batch_ndims)

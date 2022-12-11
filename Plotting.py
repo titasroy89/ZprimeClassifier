@@ -77,7 +77,7 @@ def PlotPerformance(parameters, inputfolder, outputfolder, filepostfix, plotfold
 
     if not os.path.isdir(plotfolder): os.makedirs(plotfolder)
 
-
+    print parameters
     log_model_performance(parameters=parameters, model_history=model_history, outputfolder=outputfolder)
     plot_loss(parameters=parameters, plotfolder=plotfolder, model_history=model_history)
     plot_accuracy(parameters=parameters, plotfolder=plotfolder, model_history=model_history)
@@ -342,9 +342,9 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
 
     print "GET for plotting: input_train[0] = ", input_train[0]
     print range(labels_train.shape[1])
-    print labels_train[:,1] == 1
-    print labels_train[:1]
-    print input_train[labels_train[:,1] ]
+    #print labels_train[:,1] == 1
+    #print labels_train[:1]
+    #print input_train[labels_train[:,1] ]
     # Divide into classes
     input_train_classes = {}
     input_test_classes = {}
@@ -360,7 +360,7 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
         weights_train_classes[i] = sample_weights_train[labels_train[:,i] == 1]
         weights_test_classes[i] = sample_weights_test[labels_test[:,i] == 1]
         weights_val_classes[i] = sample_weights_val[labels_val[:,i] == 1]
-    print input_train_classes[1] 
+    #print input_train_classes[1] 
     # Create class-title dictionary
     classes = parameters['classes']
     classtitles = {}

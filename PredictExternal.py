@@ -43,7 +43,7 @@ def PredictExternal(parameters, inputfolder, outputfolder, filepostfix):
 
     # Get inputs
     model = keras.models.load_model(outputfolder+'/model.h5')
-    model_best = keras.models.load_model(outputfolder+'/model_best.h5')
+    #model_best = keras.models.load_model(outputfolder+'/model_best.h5')#commented out for standardscaler
     input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
 
 #    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
@@ -60,7 +60,7 @@ def PredictExternal(parameters, inputfolder, outputfolder, filepostfix):
     # print("input_train[2]",input_train[2])
     # print ("Keras pred_train[2] =",pred_train[2])
     np.save(outputfolder+'/prediction_train.npy'  , pred_train)
-    for cl in range(len(parameters['classes'])):
+    for cl in range(len(parameters['classes'])-1):
         print 'predicting for training set, class ' + str(cl)
         tmp = pred_train[labels_train[:,cl] == 1]
         np.save(outputfolder+'/prediction_train_class'+str(cl)+'.npy'  , tmp)
@@ -71,37 +71,37 @@ def PredictExternal(parameters, inputfolder, outputfolder, filepostfix):
     print pred_test.shape
     print labels_test.shape
     np.save(outputfolder+'/prediction_test.npy'  , pred_test)
-    for cl in range(len(parameters['classes'])):
+    for cl in range(len(parameters['classes'])-1):
         print 'predicting for test set, class ' + str(cl)
         tmp = pred_test[labels_test[:,cl] == 1]
         np.save(outputfolder+'/prediction_test_class'+str(cl)+'.npy'  , tmp)
     print 'predicting for val set'
     pred_val = model.predict(input_val)
     np.save(outputfolder+'/prediction_val.npy'  , pred_val)
-    for cl in range(len(parameters['classes'])):
+    for cl in range(len(parameters['classes'])-1):
         print 'predicting for val set, class ' + str(cl)
         tmp = pred_val[labels_val[:,cl] == 1]
         np.save(outputfolder+'/prediction_val_class'+str(cl)+'.npy'  , tmp)
 
     # Do predictions with best model instead of last
     print 'predicting for training set, best model'
-    pred_train = model_best.predict(input_train)
+    pred_train = model.predict(input_train)#standardscaler changed model_best to model
     np.save(outputfolder+'/prediction_train_best.npy'  , pred_train)
-    for cl in range(len(parameters['classes'])):
+    for cl in range(len(parameters['classes'])-1):
         print 'predicting for training set, best model, class ' + str(cl)
         tmp = pred_train[labels_train[:,cl] == 1]
         np.save(outputfolder+'/prediction_train_class'+str(cl)+'_best.npy'  , tmp)
     print 'predicting for test set, best model'
-    pred_test = model_best.predict(input_test)
+    pred_test = model.predict(input_test)#standardscaler changed model_best to model
     np.save(outputfolder+'/prediction_test_best.npy'  , pred_test)
-    for cl in range(len(parameters['classes'])):
+    for cl in range(len(parameters['classes'])-1):
         print 'predicting for test set, best model, class ' + str(cl)
         tmp = pred_test[labels_test[:,cl] == 1]
         np.save(outputfolder+'/prediction_test_class'+str(cl)+'_best.npy'  , tmp)
     print 'predicting for val set, best model'
-    pred_val = model_best.predict(input_val)
+    pred_val = model.predict(input_val)#standardscaler changed model_best to model
     np.save(outputfolder+'/prediction_val_best.npy'  , pred_val)
-    for cl in range(len(parameters['classes'])):
+    for cl in range(len(parameters['classes'])-1):
         print 'predicting for val set, best model, class ' + str(cl)
         tmp = pred_val[labels_val[:,cl] == 1]
         np.save(outputfolder+'/prediction_val_class'+str(cl)+'_best.npy'  , tmp)

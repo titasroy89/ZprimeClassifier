@@ -54,9 +54,12 @@ def GetInputs(parameters):
     else:
         os.makedirs(inputdir+inputsubdir+systvar+'/'+prepreprocess+'/'+ classtag)
 
-  #  maxfiles_per_sample = {'TTbar_Semi_1': -1, 'TTbar_Semi_2': -1,'TTbar_Semi_3': -1,'TTbar_Semi_4': -1,'TTbar_Other': -1,'WJets': -1, 'ST': -1, 'DY': -1, 'QCD': -1, 'Diboson':-1}
-    maxfiles_per_sample = {'TTbar_All': -1,'WJets': -1, 'ST': -1, 'DY': -1, 'QCD': -1, 'Diboson':-1}
-  #  maxfiles_per_sample = {'TTbar': -1,'WJets': -1, 'ST': -1, 'DYJets': -1, 'QCD': -1, 'Diboson':-1}
+    maxfiles_per_sample = {'TTbarSemi_1': -1, 'TTbarSemi_2': -1,'TTbarSemi_3': -1,'TTOther': -1,'WJets': -1, 'ST': -1, 'DYJets': -1, 'QCD': -1, 'Diboson':-1}
+#    maxfiles_per_sample = {'TTbar_All': -1,'WJets': -1, 'ST': -1, 'DY': -1, 'QCD': -1, 'Diboson':-1}
+    #maxfiles_per_sample = {'TTbar': -1,'WJets': -1, 'ST': -1, 'DYJets': -1, 'QCD': -1, 'Diboson':-1}
+#    maxfiles_per_sample = {'TTbarSemi_1':-1,'QCD': -1}
+#    maxfiles_per_sample = {'TTbar_Semi_4': -1, 'QCD': -1, 'WJets': -1, 'ST': -1, 'DY': -1, 'Diboson':-1}
+    #maxfiles_per_sample = {'TTs5':-1,'ST':-1,'WJets1':-1,'DY':-1,'QCD': -1}
     # Find initial file for each class
     #inputfiles = os.listdir('input/MLInput')
 #    inputfiles = os.listdir(inputdir+systvar+inputsubdir)
@@ -108,7 +111,11 @@ def GetInputs(parameters):
                     # thiseventweight = np.concatenate((thiseventweight, np.load(inputdir+systvar+inputsubdir+'Weights_' + lists_of_inputfiles[i][j])))
                      thisinput = np.concatenate((thisinput, np.load(inputdir+inputsubdir+systvar+'/' + lists_of_inputfiles[i][j])))
                      thiseventweight = np.concatenate((thiseventweight, np.load(inputdir+inputsubdir+systvar+'/'+'Weights_' + lists_of_inputfiles[i][j])))
-
+        print  thisinput
+        print "dimension:", thisinput.ndim
+        print "shape:", thisinput.shape
+        print "size:", thisinput.size
+        #sys.exit()
         thisinput = thisinput.astype(np.float32)
         thiseventweight = thiseventweight.astype(np.float32)
         all_inputs[cl] = thisinput
@@ -169,19 +176,25 @@ def GetInputs(parameters):
 
 
     # Here we're making sure to loop through all classes in the numeric order to avoid confusing the labels of inputs -- dict might be unordered, but the input matrix has to be ordered! Thanks god the class names correspond to the list indices from 0 to nclasses-1
+    print "length all_labels", len(all_labels)
+    print "index i",all_labels[0] 
     label_concatenated = np.concatenate((tuple([all_labels[i] for i in range(len(all_labels))])))
+    print "label_concatenated:",label_concatenated.shape
     input_total = np.concatenate((tuple([all_inputs[i] for i in range(len(all_inputs))])))
     eventweight_total = np.concatenate((tuple([all_eventweights[i] for i in range(len(all_eventweights))])))
     # signal_total = np.concatenate((tuple([all_signals[i] for i in range(len(all_signals))])))
     # signal_eventweight_total = np.concatenate((tuple([all_signal_eventweights[i] for i in range(len(all_signal_eventweights))])))
 
     # Now create matrix with labels, it's zero everywhere, only the column corresponding to the class the example belongs to has ones
-    labels_total = np.zeros((label_concatenated.shape[0], len(classes)))
-    for i in range(label_concatenated.shape[0]):
-        label = label_concatenated[i]
-        labels_total[i,label] = 1
-    labels_total = labels_total.astype(np.int8)
-
+    #labels_total = np.zeros((label_concatenated.shape[0], len(classes)-1))
+    #print "label_total is:", labels_total
+    #for i in range(label_concatenated.shape[0]):
+    #    label = label_concatenated[i]
+    #    labels_total[i,label] = 1
+    #labels_total = labels_total.astype(np.int8)
+    labels_total=np.expand_dims(label_concatenated,axis=1).astype(np.int8)
+    print "label_total:",labels_total.shape
+    
     # Treat inf entries
     input_total[input_total == inf]    = 999999.
     input_total[input_total == -inf]   = -999999.
@@ -194,6 +207,9 @@ def GetInputs(parameters):
     # print input_total[labels_total[:,2]==1][0]
 
     shuffle = np.random.permutation(np.size(input_total, axis=0))
+    print "shuffle:",shuffle.shape 
+    print "input:",input_total.shape
+    print "label:",labels_total.shape
     input_total       = input_total[shuffle]
     labels_total      = labels_total[shuffle]
     eventweight_total = eventweight_total[shuffle]
@@ -206,9 +222,9 @@ def GetInputs(parameters):
     # Cut off some events if not running on full sample
     # percentage = 0.01
     percentage = runonfraction    
-    frac_train =0.80 * percentage    #0.666 * percentage
-    frac_test  =0.10 * percentage   #0.167 * percentage
-    frac_val   =0.10 * percentage   #0.167 * percentage
+    frac_train =0.90 * percentage    #0.666 * percentage
+    frac_test  =0.05 * percentage   #0.167 * percentage
+    frac_val   =0.05 * percentage   #0.167 * percentage
     
     sumweights = np.sum(eventweight_total, axis=0)
     print 'shape of all inputs: ', input_total.shape
@@ -223,7 +239,8 @@ def GetInputs(parameters):
     takeupto_val   = 0
     sumweights_classes = {}
     # initialize this dict
-    for i in range(labels_total.shape[1]):
+    #for i in range(labels_total.shape[1]):
+    for i in range(len(classes)):
         sumweights_classes[i] = 0.
 
     for i in range(len(eventweight_total)):
@@ -242,12 +259,14 @@ def GetInputs(parameters):
     	
     print 'takeupto_(train/test/val): ' , takeupto_train, takeupto_test, takeupto_val
     input_train = input_total[:takeupto_train]
+  #  input_train = to_categorical(input_train)
     labels_train = labels_total[:takeupto_train]
     eventweight_train = eventweight_total[:takeupto_train]
     input_test = input_total[takeupto_train:takeupto_test]
     labels_test = labels_total[takeupto_train:takeupto_test]
     eventweight_test = eventweight_total[takeupto_train:takeupto_test]
     input_val = input_total[takeupto_test:takeupto_val]
+    #input_val = to_categorical(input_val)
     labels_val = labels_total[takeupto_test:takeupto_val]
     eventweight_val = eventweight_total[takeupto_test:takeupto_val]
     print 'shapes of inputs (train, test, val): ', input_train.shape, input_test.shape, input_val.shape
@@ -272,31 +291,47 @@ def GetInputs(parameters):
     sample_weights_val_list = []
     for i in range(len(labels_train[:,0])):
         #loop over training examples i
-        for j in range(len(labels_train[i,:])):
+    #    for j in range(len(labels_train[i,:])):
             #loop over possible classes j
-            if labels_train[i,j] == 1:
-                thisweight = class_weights[j] * eventweight_train[i]
-                sample_weights_train_list.append(thisweight)
+     #       if labels_train[i,j] == 1:
+      #          thisweight = class_weights[j] * eventweight_train[i]
+       #         sample_weights_train_list.append(thisweight)
+	thisweight = class_weights[labels_train[i,0]] * eventweight_train[i]
+        sample_weights_train_list.append(thisweight)
+	
     for i in range(len(labels_test[:,0])):
-        for j in range(len(labels_test[i,:])):
-            if labels_test[i,j] == 1:
-                thisweight = class_weights[j] * eventweight_test[i]
-                sample_weights_test_list.append(thisweight)
+       # for j in range(len(labels_test[i,:])):
+        #    if labels_test[i,j] == 1:
+         #       thisweight = class_weights[j] * eventweight_test[i]
+          #      sample_weights_test_list.append(thisweight)
+	thisweight = class_weights[labels_test[i,0]] * eventweight_test[i]
+	sample_weights_test_list.append(thisweight)
+    print "shape labels val before:",labels_val.shape
     for i in range(len(labels_val[:,0])):
-        for j in range(len(labels_val[i,:])):
-            if labels_val[i,j] == 1:
-                thisweight = class_weights[j] * eventweight_val[i]
-                sample_weights_val_list.append(thisweight)
+        #for j in range(len(labels_val[i,:])):
+         #   if labels_val[i,j] == 1:
+          #      thisweight = class_weights[j] * eventweight_val[i]
+           #     sample_weights_val_list.append(thisweight)
+	#changed for binary
+	thisweight = class_weights[labels_val[i,0]] * eventweight_val[i]
+	sample_weights_val_list.append(thisweight)
+		
+		
 
 
     # Test: sum val-sampleweights for each class, should be the same value for all classes
     sums = {0:0., 1:0., 2:0., 3:0., 4:0.}
+    print "labels_val[:,0]:",len(labels_val[:,0])
+    print "labels_val[i,:]:",len(labels_val[0,:]),len(labels_val[1,:])
+    print "shape of labels_vals",labels_val.shape   
+    print "sample_weights_val_list:",len(sample_weights_val_list)
     for i in range(len(labels_val[:,0])):
         #loop over training examples i
-        for j in range(len(labels_val[i,:])):
+        #for j in range(len(labels_val[i,:])):
             #loop over possible classes j
-            if labels_val[i,j] == 1:
-                sums[j] += sample_weights_val_list[i]
+            #if labels_val[i,j] == 1:
+                #print j, i
+    	sums[0] += sample_weights_val_list[i]
 
     sample_weights_train = np.asarray(sample_weights_train_list).ravel()
     sample_weights_test = np.asarray(sample_weights_test_list).ravel()
@@ -519,7 +554,7 @@ def SplitInputs(parameters, outputfolder, filepostfix):
     # np.save(outputfolder+'/input_'+fraction+'_val_set_raw.npy', val_set[:,0:input_train_shape1])
     print('Inputs stored!')
 
-    labels_train_shape_1 = len(parameters['classes'])
+    labels_train_shape_1 = len(parameters['classes'])-1
     np.save(outputfolder+'/labels_'+fraction+'_train.npy', train_set[:,input_train_shape1:input_train_shape1+labels_train_shape_1])
     np.save(outputfolder+'/labels_'+fraction+'_test.npy', test_set[:,input_train_shape1:input_train_shape1+labels_train_shape_1])
     np.save(outputfolder+'/labels_'+fraction+'_val.npy', val_set[:,input_train_shape1:input_train_shape1+labels_train_shape_1])
@@ -573,7 +608,7 @@ def FitPrepocessing(parameters, outputfolder, filepostfix):
             var = variable_names[i]
             if(parameters['preprocess'] == 'StandardScaler'):
                 mean = scaler.mean_[i] #valid only for StandardScaler, placeholder for the rest
-                scale = scaler.std_[i] #valid only for StandardScaler, placeholder for the rest
+                scale = scaler.var_[i] #valid only for StandardScaler, placeholder for the rest, scaler.std_
                 line = var + ' StandardScaler ' + str(mean) + ' ' + str(scale) + '\n'
             elif(parameters['preprocess'] == 'MinMaxScaler'):
                 # minv = scaler.min_[i] #valid only for MinMaxScaler

@@ -301,6 +301,7 @@ def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, 
     lumiweights_tests = {}
 
     for cl in classes.keys():
+	if cl>0:continue
         pred_trains_thistrueclass = {}
         pred_vals_thistrueclass = {}
         pred_tests_thistrueclass = {}
@@ -314,6 +315,7 @@ def get_data_dictionaries(parameters, eventweights_train, sample_weights_train, 
         lumiweights_vals_thistrueclass = {}
         lumiweights_tests_thistrueclass = {}
         for node in classes.keys():
+	    if node>0:continue
             print "    ---!!!HEYHEY!!! node: ",node
             if not eqweight:
                 weights_trains_thistrueclass[node] = eventweights_train[labels_train[:,cl] == 1]
@@ -444,19 +446,21 @@ def conf_matrix(labels, predictions, weights):
         raise ValueError('Labels and weights do not have the same length (.shape[0]).')
 
     # initialize confusion matrix
-    matrix = np.zeros((labels.shape[1], labels.shape[1]))
+    matrix = np.zeros((labels.shape[1]+1, labels.shape[1]+1))
 
     # format inputs
     for i in range(labels.shape[0]):
-        label = -1
-        predclass = -1
-        maxpred = -1
-        for j in range(labels.shape[1]):
-            if labels[i,j] == 1: label = j
-            if maxpred < predictions[i,j]:
-                maxpred = predictions[i,j]
-                predclass = j
+        label = int(labels[i,0])
+	
+        predclass = int(predictions[i,0]>0.5)
+        maxpred = predictions[i,0]
+        #for j in range(labels.shape[1]):
+         #   if labels[i,j] == 1: label = j
+          #  if maxpred < predictions[i,j]:
+           #     maxpred = predictions[i,j]
+           #     predclass = j
         if label == -1: raise ValueError('For this event, the labels of all classes are 0, so the event doesn\'t have a class?')
+#	print "label,predclass,i,weights[i]:",label,predclass,i,weights[i]
         matrix[label,predclass] = matrix[label,predclass] + weights[i]
 
     return matrix
@@ -577,8 +581,8 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
     print "weights_val",sample_weights_val
     FalsePositiveRates, TruePositiveRates, Thresholds, aucs, SignalPuritys = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_val, labels_val=labels_val, weights_val=sample_weights_val)
     # print 'eqweight: ', sample_weights_val[10:15]
-    print 'fpr: ', FalsePositiveRates[1][10:15]
-    print 'tpr: ', TruePositiveRates[1][10:15]
+    print 'fpr: ', FalsePositiveRates[0][10:15]#changed from 1 to 0 for binary
+    print 'tpr: ', TruePositiveRates[0][10:15]
 
 
     plt.clf()
@@ -658,7 +662,7 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
     # Individual backgrounds: 1 plot per class, the other classes are individual curves. Therefore we only need to look at outputnode no. 'cl'
     for cl in classes.keys():
         #cl is the true class
-
+	if cl>0:continue
         # Dictionaries to store the rocs against each individual background
         fprs_eq = {}
         tprs_eq = {}
@@ -675,15 +679,17 @@ def plot_rocs(parameters, plotfolder, pred_val, labels_val, sample_weights_val, 
 
         # Loop over all remaining classes, always keep predictions, labels, and weights for class 'cl' and this one background
         for i in classes.keys():
+	    
             # i is the index of the one background class
             if i == cl: continue
-            mask = np.logical_or(labels_val[:,cl] == 1, labels_val[:,i] == 1)
+        #    mask = np.logical_or(labels_val[:,cl] == 1, labels_val[:,i] == 1)
+	    mask=np.ones(labels_val.shape[0],dtype=np.bool)
             pred_this = pred_val[mask]
             labels_this = labels_val[mask]
             weights_sample = sample_weights_val[mask]
             weights_lum = eventweights_val[mask]
-            pred_this = pred_this[:,[cl,i]]
-            labels_this = labels_this[:,[cl,i]]
+            #pred_this = pred_this[:,[cl,i]]
+            #labels_this = labels_this[:,[cl,i]]
             fprs_eq[i], tprs_eq[i], thrs_eq[i], aucss_eq[i], prts_eq[i] = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_this, labels_val=labels_this, weights_val=weights_sample)
             fprs_lum[i], tprs_lum[i], thrs_lum[i], aucss_lum[i], prts_lum[i] = get_fpr_tpr_thr_auc(parameters=parameters, pred_val=pred_this, labels_val=labels_this, weights_val=weights_lum)
 
@@ -798,13 +804,13 @@ def plot_loss(parameters, plotfolder, model_history):
     plt.yscale("log")
     if eqweight:
 #        plt.ylim([0.01, 0.06])
-        plt.ylim([0.01,1])
+        plt.ylim([0.0001,1])
     plt.ylabel('Loss')
     plt.xlabel('Number of training epochs')
     fig.savefig(plotfolder+'/Loss.pdf')
     plt.close()
 
-def fit_loss(losslist, maxfev=50000):
+def fit_loss(losslist, maxfev=500000):#original 50000
 
     def fitfunc(x, a, b, c, d, e):
         return a + b/x + c*x + d*x*x + e/x/x + d*x*x*x
@@ -816,7 +822,7 @@ def fit_loss(losslist, maxfev=50000):
     #fity = losslist[9:]
     fitx = x[2:]
     fity = losslist[2:]
-
+    
     postfitpars, cov = opt.curve_fit(fitfunc, fitx, fity, maxfev=maxfev,method='dogbox')
     print "postfitpars: ",postfitpars
 #    postfitpars, cov = opt.curve_fit(fitfunc, fitx, fity) #TEST
@@ -929,14 +935,14 @@ def plot_confusion_matrices(parameters, plotfolder, pred_train, labels_train, sa
     labels_1d = np.empty(labels_val.shape[0])
     pred_1d = np.empty(pred_val.shape[0])
     for i in range(len(labels_1d)):
-        label = -1
-        predclass = -1
-        maxpred = -1
-        for j in range(labels_val.shape[1]):
-            if labels_val[i,j] == 1: label = j
-            if maxpred < pred_val[i,j]:
-                maxpred = pred_val[i,j]
-                predclass = j
+        label = labels_val[i,0]
+        predclass = pred_val[i,0]
+        maxpred = pred_val[i,0]
+    #    for j in range(labels_val.shape[1]):
+     #       if labels_val[i,j] == 1: label = j
+     #       if maxpred < pred_val[i,j]:
+      #          maxpred = pred_val[i,j]
+       #         predclass = j
         if label == -1: raise ValueError('For this event, the labels of all classes are 0, so the event doesn\'t have a class?')
         labels_1d[i] = label
         pred_1d[i] = predclass

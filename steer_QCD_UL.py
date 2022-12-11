@@ -56,21 +56,21 @@ merged_str = 'Merged'
 channel = 'muon'
 parameters = {
     'layers':[512,512], #512
-    'batchsize': 13107,#131072
-    #'classes':{0: ['QCD'], 1:['TTbar_Semi_1','TTbar_Semi_2','TTbar_Semi_3','TTbar_Semi_4','TTbar_Other','ST','WJets','DY','Diboson']},
-    'classes':{0: ['QCD'], 1:['TTbar_All','ST','WJets','DY','Diboson']},
+    'batchsize':32,
+    'classes':{0: ['QCD'], 1:['TTbarSemi_1','TTbarSemi_2','TTbarSemi_3','TTOther','ST','WJets','DYJets']},
+   # 'classes':{0: ['QCD'], 1:['TTs5']},#,2:['ST','WJets1','DY']},
     'regmethod': 'dropout',
     'regrate':0.50,
-    'batchnorm': True,
-    'epochs':500, #300
-    'learningrate': 0.0001,#0.0005,
+    'batchnorm': False,
+    'epochs':300, 
+    'learningrate':0.0005,
     'decay_steps':1.0,
     'decay_rate': 0.0025,
     'runonfraction': 1.0,
-    'eqweight':False,
-    'preprocess': 'MinMaxScaler',
+    'eqweight':True,
+    'preprocess': 'StandardScaler',
     'sigma': 1.0, #sigma for Gaussian prior (BNN only)
-    'inputdir': '../../MLInputs_mu_UL/',
+    'inputdir': '../../MLInputs_mu_UL_Nov17/',
     'inputsubdir': 'MLInput/', #path to input files: inputdir + systvar + inputsubdir
     'prepreprocess': 'RAW' #for inputs with systematics don't do preprocessing before merging all inputs on one,     #FixME: add prepreprocessing in case one does not need to merge inputs
 }
@@ -79,8 +79,8 @@ tag = dict_to_str(parameters)
 print "tag is:",tag
 classtag = get_classes_tag(parameters)
 print "classtag is:",classtag
-np.random.seed(1234)
-tf.set_random_seed(1234)
+np.random.seed(1)
+tf.set_random_seed(1)
 ########## GetInputs ########
 for ivars in range(len(variations)):
      merged_str = merged_str+'__'+variations[ivars]
@@ -114,11 +114,11 @@ plotfolder = 'Plots/'+parameters['preprocess']
 #gpu_fraction = 0.1
 #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction)
 #sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-TrainNetwork(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag)
+TrainNetwork(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel)#+'_'+tag)
 print outputfolder
-PredictExternal(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag, filepostfix='')
+PredictExternal(parameters, inputfolder=parameters['inputdir']+parameters['preprocess']+'/'+merged_str+'/'+classtag, outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel, filepostfix='')
 
 print "outputfolder:", 'output/'+parameters['preprocess']+'/DNN_'+tag
-PlotPerformance(parameters, inputfolder=parameters['inputdir']+'/'+parameters['preprocess']+'/'+merged_str+'/'+classtag,outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel+'_'+tag,filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/DNN_'+channel, use_best_model=True, usesignals=[2,4])
+PlotPerformance(parameters, inputfolder=parameters['inputdir']+'/'+parameters['preprocess']+'/'+merged_str+'/'+classtag,outputfolder='output/'+parameters['preprocess']+'/DNN_'+channel,filepostfix='', plotfolder='Plots/'+parameters['preprocess']+'/DNN_'+channel, use_best_model=True, usesignals=[2,4])
 
 
