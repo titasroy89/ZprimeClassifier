@@ -123,31 +123,31 @@ def load_data(parameters, inputfolder, filepostfix):
     sample_weights_val = np.load(inputfolder+'/sample_weights_'+fraction+'_val'+filepostfix+'.npy').astype(np.float32)
     eventweights_val = np.load(inputfolder+'/eventweights_'+fraction+'_val'+filepostfix+'.npy').astype(np.float32)
 
-    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
-    signals = {}
-    signal_eventweights = {}
-    signal_normweights = {}
-    for i in range(len(signal_identifiers)):
-        signals[i] = np.load(inputfolder+'/' + signal_identifiers[i] + filepostfix+'.npy').astype(np.float32)
-        signal_eventweights[i] = np.load(inputfolder+'/' + signal_identifiers[i] + '_eventweight'+filepostfix+'.npy').astype(np.float32)
-        sum_signal_eventweights = signal_eventweights[i].sum()
-        signal_normweights[i] = np.array([1./sum_signal_eventweights for j in range(signal_eventweights[i].shape[0])])
-    return input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights
+    #signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
+    #signals = {}
+    #signal_eventweights = {}
+    #signal_normweights = {}
+    #for i in range(len(signal_identifiers)):
+     #   signals[i] = np.load(inputfolder+'/' + signal_identifiers[i] + filepostfix+'.npy').astype(np.float32)
+      #  signal_eventweights[i] = np.load(inputfolder+'/' + signal_identifiers[i] + '_eventweight'+filepostfix+'.npy').astype(np.float32)
+       # sum_signal_eventweights = signal_eventweights[i].sum()
+       # signal_normweights[i] = np.array([1./sum_signal_eventweights for j in range(signal_eventweights[i].shape[0])])
+    return input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val#, signals, signal_eventweights, signal_normweights
     
 
 
 def load_predictions(outputfolder, filepostfix):
 
     print 'Loading predictions...'
-    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
+    #signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
 
     # Load model prediction
-    pred_signals = {}
+  #  pred_signals = {}
     pred_train = np.load(outputfolder+'/prediction_train'+filepostfix+'.npy').astype(np.float32)
     pred_val = np.load(outputfolder+'/prediction_val'+filepostfix+'.npy').astype(np.float32)
     pred_test = np.load(outputfolder+'/prediction_test'+filepostfix+'.npy').astype(np.float32)
-    for i in range(len(signal_identifiers)):
-        pred_signals[i] = np.load(outputfolder+'/prediction_'+signal_identifiers[i]+''+filepostfix+'.npy').astype(np.float32)
+   # for i in range(len(signal_identifiers)):
+    #    pred_signals[i] = np.load(outputfolder+'/prediction_'+signal_identifiers[i]+''+filepostfix+'.npy').astype(np.float32)
 
     return pred_train, pred_test, pred_val, pred_signals
 

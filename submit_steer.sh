@@ -10,7 +10,7 @@
 #SBATCH --mail-type ALL                           # Type of email notification- BEGIN,END,FAIL,ALL
 #SBATCH --mail-user anastasia.karavdina@desy.de          # Email to which notifications will be sent. It defaults to <userid@mail.desy.de> if none is set.
 
-source ~/.setenv
+source .setenv
 echo $PYTHONPATH
-cd /beegfs/desy/user/karavdia/ZprimeClassifier
+cd /nfs/dust/cms/user/titasroy/Training_DNN/ZprimeClassifier
 ./steer.py

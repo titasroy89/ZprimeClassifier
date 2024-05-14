@@ -334,7 +334,7 @@ def PlotInputs(parameters, inputfolder, filepostfix, plotfolder):
         os.makedirs(plotfolder)
 
     # Get inputs
-    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, eventweight_signals, normweight_signals = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
+    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
 
     with open(inputfolder+'/variable_names.pkl', 'r') as f:
         variable_names = pickle.load(f)

@@ -63,8 +63,8 @@ def TrainNetwork(parameters, inputfolder, outputfolder):
 #    if not os.path.isdir('output/' + tag): os.makedirs('output/'+tag)
     if not os.path.isdir(outputfolder): os.makedirs(outputfolder)
 
-    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights = load_data(parameters, inputfolder=inputfolder, filepostfix='')
-
+    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val = load_data(parameters, inputfolder=inputfolder, filepostfix='')
+    #input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val= load_data(parameters, inputfolder=inputfolder, filepostfix='')
 
     # Define the network
     model = Sequential()

@@ -44,9 +44,9 @@ def PredictExternal(parameters, inputfolder, outputfolder, filepostfix):
     # Get inputs
     model = keras.models.load_model(outputfolder+'/model.h5')
     model_best = keras.models.load_model(outputfolder+'/model_best.h5')
-    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights = load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
+    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val= load_data(parameters, inputfolder=inputfolder, filepostfix=filepostfix)
 
-    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
+   # signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
 
     # Do the predictions
     print 'Now that the model is trained, we\'re going to predict the labels of all 3 sets. '
@@ -106,12 +106,12 @@ def PredictExternal(parameters, inputfolder, outputfolder, filepostfix):
         tmp = pred_val[labels_val[:,cl] == 1]
         np.save(outputfolder+'/prediction_val_class'+str(cl)+'_best.npy'  , tmp)
 
-    print 'predicting for signals'
-    for i in range(len(signal_identifiers)):
-        pred_signal= model.predict(signals[i])
-        np.save(outputfolder+'/prediction_'+signal_identifiers[i]+'.npy'  , pred_signal)
-        pred_signal = model_best.predict(signals[i])
-        np.save(outputfolder+'/prediction_'+signal_identifiers[i]+'_best.npy'  , pred_signal)
+    #print 'predicting for signals'
+    #for i in range(len(signal_identifiers)):
+     #   pred_signal= model.predict(signals[i])
+      #  np.save(outputfolder+'/prediction_'+signal_identifiers[i]+'.npy'  , pred_signal)
+       # pred_signal = model_best.predict(signals[i])
+       # np.save(outputfolder+'/prediction_'+signal_identifiers[i]+'_best.npy'  , pred_signal)
 
     print "Keras pred_train[0] =",pred_train[0]
     print "Keras pred_val[0] =",pred_val[0]
@@ -127,9 +127,9 @@ def PredictExternalOnPredictions(parameters, inputfolder, inputfolder_prediction
     # Get inputs
     model = keras.models.load_model(outputfolder+'/model.h5')
     model_best = keras.models.load_model(outputfolder+'/model_best.h5')
-    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val, signals, signal_eventweights, signal_normweights = load_data(parameters, inputfolder=inputfolder, filepostfix='')
+    input_train, input_test, input_val, labels_train, labels_test, labels_val, sample_weights_train, sample_weights_test, sample_weights_val, eventweights_train, eventweights_test, eventweights_val= load_data(parameters, inputfolder=inputfolder, filepostfix='')
 
-    input_train, input_test, input_val, signals = load_predictions(outputfolder=inputfolder_predictions, filepostfix=filepostfix)
+    input_train, input_test, input_val = load_predictions(outputfolder=inputfolder_predictions, filepostfix=filepostfix)
     # pred_train, pred_test, pred_val, pred_signals = load_predictions(outputfolder=inputfolder_predictions, filepostfix=filepostfix)
     # input_train = np.concatenate((input_train, pred_train), axis=1)
     # input_test = np.concatenate((input_test, pred_test), axis=1)
@@ -137,7 +137,7 @@ def PredictExternalOnPredictions(parameters, inputfolder, inputfolder_prediction
     # for i in signals.keys():
     #     signals[i] = np.concatenate((signals[i], pred_signals[i]), axis=1)
 
-    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
+#    signal_identifiers = ['RSGluon_All', 'RSGluon_M1000', 'RSGluon_M2000', 'RSGluon_M3000', 'RSGluon_M4000', 'RSGluon_M5000', 'RSGluon_M6000']
 
     # Do the predictions
     print 'Now that the model is trained, we\'re going to predict the labels of all 3 sets. '
@@ -187,12 +187,12 @@ def PredictExternalOnPredictions(parameters, inputfolder, inputfolder_prediction
         tmp = pred_val[labels_val[:,cl] == 1]
         np.save(outputfolder+'/prediction_val_class'+str(cl)+'_best.npy'  , tmp)
 
-    print 'predicting for signals'
-    for i in range(len(signal_identifiers)):
-        pred_signal= model.predict(signals[i])
-        np.save(outputfolder+'/prediction_'+signal_identifiers[i]+'.npy'  , pred_signal)
-        pred_signal = model_best.predict(signals[i])
-        np.save(outputfolder+'/prediction_'+signal_identifiers[i]+'_best.npy'  , pred_signal)
+ #   print 'predicting for signals'
+  #  for i in range(len(signal_identifiers)):
+   #     pred_signal= model.predict(signals[i])
+    #    np.save(outputfolder+'/prediction_'+signal_identifiers[i]+'.npy'  , pred_signal)
+     #   pred_signal = model_best.predict(signals[i])
+      #  np.save(outputfolder+'/prediction_'+signal_identifiers[i]+'_best.npy'  , pred_signal)
 
 
 
